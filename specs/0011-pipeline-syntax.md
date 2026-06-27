@@ -11,13 +11,13 @@ stage は明示的な関数呼び出しに限定し、左辺の値を stage call
 ます。
 
 ```emela
-42 |> print_i32!()
+"hello" |> write_stdout_utf8!()
 ```
 
 は次と同じ意味です。
 
 ```emela
-print_i32!(42)
+write_stdout_utf8!("hello")
 ```
 
 このドラフトは placeholder、partial application、Result-aware pipe、qualified
@@ -147,11 +147,11 @@ Pipeline 自体は新しい effect や capability を導入しません。Desuga
 
 ```emela
 fn main!() -> Unit {
-  42 |> print_i32!()
+  "hello" |> write_stdout_utf8!()
 }
 ```
 
-上の `print_i32!` が `Stdout` capability を要求する場合、`main!` も通常の関数呼び出し
+上の `write_stdout_utf8!` が `Stdout` capability を要求する場合、`main!` も通常の関数呼び出し
 と同じ規則で `Stdout` を要求します。
 
 ### Error Propagation
@@ -187,10 +187,10 @@ read_text!(path)?
 標準ライブラリ関数への pipe:
 
 ```emela
-import std.io.print_i32!
+import std.io.write_stdout_utf8!
 
 fn main!() -> Unit {
-  42 |> print_i32!()
+  "hello" |> write_stdout_utf8!()
 }
 ```
 

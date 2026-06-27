@@ -5,7 +5,8 @@ Status: Draft
 ## Summary
 
 このドラフトは、`struct` と `enum` に基づく `Result` 型の慣用形を定義します。
-`Result` はこの段階では組み込み特殊型ではなく、通常の enum として宣言します。
+`Result` は標準 prelude が提供する generic enum として扱います。専用 ABI は持たず、
+通常の enum と同じ表現へ lower されます。
 
 ## Motivation
 
@@ -14,18 +15,16 @@ Status: Draft
 
 ## Specification
 
-`Result` は、通常の enum として次の形で定義できます。
+`Result` は、次の generic enum として定義されます。
 
 ```emela
-enum Result {
-  Ok(I32)
-  Err(Error)
+enum Result<T, E> {
+  Ok(T)
+  Err(E)
 }
 ```
 
-`Ok` は成功値を持つ variant、`Err` は失敗値を持つ variant として扱う SHOULD です。
-このドラフトではジェネリック型がないため、プログラムは用途ごとに具体的な payload 型を
-持つ `Result` enum を宣言します。
+`Ok` は成功値を持つ variant、`Err` は失敗値を持つ variant として扱います。
 
 失敗値は通常の型です。たとえば単一フィールド struct を使ってエラーコードを表せます。
 
@@ -34,12 +33,7 @@ struct Error {
   code: I32
 }
 
-enum Result {
-  Ok(I32)
-  Err(Error)
-}
-
-fn checked(value) -> Result {
+fn checked(value) -> Result<I32, Error> {
   match value == 0 {
     true -> Err(Error { code: 1 })
     false -> Ok(value)
@@ -59,11 +53,9 @@ fn main() -> I32 {
 
 ## Compilation Notes
 
-`Result` の実行時表現は [0005: Enum Types](0005-enum-types.md) の enum 表現に従います。
+`Result<T, E>` の実行時表現は [0005: Enum Types](0005-enum-types.md) の enum 表現に従います。
 `Result` 専用の ABI は定義しません。
 
 ## Open Questions
 
-- `Result<T, E>` のようなジェネリック型の導入。
 - `?` 演算子または早期 return 構文の導入。
-- `Ok`/`Err` を標準 prelude として暗黙に提供するかどうか。
