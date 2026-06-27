@@ -67,3 +67,5 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0004: Struct Types](specs/0004-struct-types.md)
 - [0005: Enum Types](specs/0005-enum-types.md)
 - [0006: Result Type](specs/0006-result-type.md)
+- [0007: Generic Types](specs/0007-generic-types.md)
+- [0008: Imports](specs/0008-imports.md)
