@@ -5,8 +5,9 @@ Status: Draft
 ## Summary
 
 このドラフトは、Emela に型パラメータを持つ `struct` と `enum` を導入します。
-最初の対象は、型宣言と型注釈で使う generic type です。generic function、trait bound、
-型推論の詳細は後続仕様で定義します。
+最初の対象は、型宣言と型注釈で使う generic type です。generic function は
+[0013: Generic Functions](0013-generic-functions.md) で定義します。trait bound と型推論の
+詳細は後続仕様で定義します。
 
 ## Motivation
 
@@ -135,8 +136,8 @@ fn unwrap_or_zero(result) -> I32 {
 }
 ```
 
-このドラフトでは、関数パラメータの型注釈や generic function をまだ定義しません。
-したがって上の例の `result` 型をどのように推論・注釈するかは後続仕様で定義します。
+generic function と関数パラメータ型注釈は [0013: Generic Functions](0013-generic-functions.md)
+および [0009: Type Annotations](0009-type-annotations.md) で定義します。
 
 ## Compilation Notes
 
@@ -150,7 +151,7 @@ generic enum は、型引数を代入した各 payload 型に基づいて layout
 
 ## Open Questions
 
-- generic function と関数パラメータ型注釈の構文。
+- trait bound や `where` clause と generic type の関係。
 - trait bound や `where` clause の構文。
 - higher-kinded type を将来導入するかどうか。
 - generic type の明示的な type alias。

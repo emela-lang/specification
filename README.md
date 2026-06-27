@@ -73,3 +73,4 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0010: Function Values and Function Types](specs/0010-function-values.md)
 - [0011: Pipeline Syntax](specs/0011-pipeline-syntax.md)
 - [0012: Toolchain and Package Resolution](specs/0012-toolchain-and-package-resolution.md)
+- [0013: Generic Functions](specs/0013-generic-functions.md)
