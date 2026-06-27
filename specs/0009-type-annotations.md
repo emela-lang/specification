@@ -55,7 +55,7 @@ type_annotation =
 ```
 
 `type` の文法は、現在有効な型仕様の合成です。初期コアの primitive type、struct/enum
-の nominal type、generic type application が含まれます。
+の nominal type、generic type application、関数型が含まれます。
 
 ```text
 type =
@@ -65,6 +65,7 @@ type =
   | type_name
   | type_parameter
   | type_name < type_argument_list >
+  | function_type
 ```
 
 `type_parameter` は、型宣言など、その型パラメータがスコープ内にある場所でのみ有効
@@ -210,6 +211,23 @@ fn is_some(value: Option<I32>) -> Bool {
     Some(_) -> true
     None -> false
   }
+}
+```
+
+関数型をパラメータとローカル束縛で指定する例:
+
+```emela
+fn add_one(value: I32) -> I32 {
+  value + 1
+}
+
+fn apply(value: I32, f: fn(I32) -> I32) -> I32 {
+  f(value)
+}
+
+fn main() -> I32 {
+  op: fn(I32) -> I32 = add_one
+  apply(41, op)
 }
 ```
 

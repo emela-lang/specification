@@ -55,6 +55,25 @@ type_argument_list =
 型パラメータは、その `struct` または `enum` 宣言のフィールド型、variant payload 型、
 および同じ型宣言内の nested type argument で使用できます。
 
+後続仕様で追加される型構文も `type` に含まれる場合、型引数として使用できます。
+たとえば [0010: Function Values and Function Types](0010-function-values.md) の関数型は、
+`type_argument_list` 内に書けます。
+
+```emela
+struct Handler<T> {
+  callback: T
+}
+
+fn add_one(value: I32) -> I32 {
+  value + 1
+}
+
+fn main() -> Unit {
+  handler: Handler<fn(I32) -> I32> = Handler { callback: add_one }
+  ()
+}
+```
+
 ```emela
 struct Box<T> {
   value: T
