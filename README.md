@@ -71,3 +71,4 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0008: Imports](specs/0008-imports.md)
 - [0009: Type Annotations](specs/0009-type-annotations.md)
 - [0010: Function Values and Function Types](specs/0010-function-values.md)
+- [0011: Pipeline Syntax](specs/0011-pipeline-syntax.md)
