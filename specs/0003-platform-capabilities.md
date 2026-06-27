@@ -130,12 +130,63 @@ fn main!() {
 `main!` が capability handler または runtime boundary で `Stdout` を処理する場合は、
 外側へ伝播しません。
 
-### Target Capability Set
+### Platform Capability Set
 
-各 compilation target は、提供できる capability set を宣言します。
+Platform は、提供できる capability set を宣言します。
+
+この仕様でいう Platform は、target triple そのものではありません。Platform は、
+capability requirement を満たす外部実装セットです。target triple は native ABI、
+object format、assembly backend、linker などを選ぶための概念として残ります。
+言い換えると、Target は ABI/codegen/linker の責務を持ち、Platform は capability と
+外部関数実装 binding の provider です。
+
+同じ target triple に対して複数の Platform を選べます。たとえば `node` Platform は
+JavaScript backend の `console.log` binding を提供でき、`wasm32-wasi` target の既定
+Platform は WASI import を提供できます。
+
+Platform は build input または manifest として compiler へ渡されます。manifest は
+少なくとも platform 名、提供 capability set、外部関数 declaration を含みます。
+
+```json
+{
+  "name": "node",
+  "capabilities": ["Stdout", "Clock"],
+  "externs": [
+    {
+      "path": ["platform", "io"],
+      "name": "print_i32!",
+      "params": ["I32"],
+      "return": "Unit",
+      "effectful": true,
+      "capabilities": ["Stdout"],
+      "bindings": {
+        "js": {
+          "callee": "console.log"
+        },
+        "native": {
+          "symbol": "emela_print_i32",
+          "link": ["emela_runtime"]
+        }
+      }
+    }
+  ]
+}
+```
+
+`capabilities` に含まれない capability を runtime boundary が要求する場合、その
+Platform への compilation は MUST reject されます。
+
+外部関数ごとの `capabilities` は「その関数を呼ぶために必要な capability」を表します。
+Platform は capability を提供するだけでなく、選択 backend に必要な binding も該当
+外部関数ごとに提供しなければ code generation できません。
+
+#### Default Target Platforms
+
+実装は、従来の target triple に対応する既定 Platform を持ってよいです。既定
+Platform の capability set は次のように定義できます。
 
 ```text
-target aarch64-apple-darwin provides {
+platform aarch64-apple-darwin provides {
   Stdout,
   Stdin,
   Stderr,
@@ -148,7 +199,7 @@ target aarch64-apple-darwin provides {
   Network
 }
 
-target x86_64-unknown-linux-gnu provides {
+platform x86_64-unknown-linux-gnu provides {
   Stdout,
   Stdin,
   Stderr,
@@ -161,10 +212,10 @@ target x86_64-unknown-linux-gnu provides {
   Network
 }
 
-target wasm32-unknown-unknown provides {
+platform wasm32-unknown-unknown provides {
 }
 
-target wasm32-wasi provides {
+platform wasm32-wasi provides {
   Stdout,
   Stdin,
   Stderr,
@@ -176,18 +227,22 @@ target wasm32-wasi provides {
 }
 ```
 
-target が提供しない capability を未処理のまま要求するプログラムは、その target へ
+Platform が提供しない capability を未処理のまま要求するプログラムは、その Platform へ
 MUST compile できません。
 
 ### Runtime Boundary
 
-実行可能プログラムでは、`main` または `main!` が runtime boundary です。
+executable mode のプログラムでは、`main` または `main!` が runtime boundary です。
+library mode の compilation unit は runtime boundary を選択しません。library mode
+では、各関数の effect/capability requirement は型情報として保持され、最終的な
+platform capability 提供チェックは executable mode または link/package composition
+の段階で行われます。
 
-runtime boundary は、target capability set とプログラムが要求する capability set を
+runtime boundary は、Platform capability set とプログラムが要求する capability set を
 照合します。
 
-target が capability を提供する場合、コンパイラまたは runtime はその capability を
-具体的な実装へ lower できます。target が提供しない場合、プログラムは reject される
+Platform が capability を提供する場合、コンパイラまたは runtime はその capability を
+具体的な実装へ lower できます。Platform が提供しない場合、プログラムは reject される
 か、ユーザーが明示的な handler/import を提供する必要があります。
 
 ### Portable Functions
@@ -235,7 +290,9 @@ fn main!() {
 ## Compilation Notes
 
 Native target では、capability は runtime capability value、直接 syscall/libc call、
-または platform runtime 関数へ lower できます。
+または platform runtime 関数へ lower できます。初期 Native manifest binding は
+外部関数単位の C ABI runtime symbol call を表し、symbol prefix、ABI、register
+convention、linker 種別は Target/Native backend 側で処理します。
 
 WASM target では、capability は WASI import、custom host import、または embedder が
 提供する function table へ lower できます。
@@ -249,7 +306,7 @@ capability を明示的な値として渡す実装にすると、テスト時に
 - `main!` を entry point として許可するか、`main` に特別な runtime boundary を与えるか。
 - capability handler の構文をどうするか。
 - `IO` effect と `Platform` effect を分け続けるか、capability だけで十分か。
-- target capability set をソース内に書くか、ビルド設定側で宣言するか。
+- Platform capability set をソース内に書くか、ビルド設定側で宣言するか。
 - WASM の `wasi` と custom host import を同じ capability model で扱うか。
 - `#[requires()]` を空 capability set の明示として許可するか、それとも属性自体を省略
   させるか。
