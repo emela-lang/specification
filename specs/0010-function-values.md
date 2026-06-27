@@ -10,9 +10,9 @@ Status: Draft
 関数パラメータとして渡せます。これにより、関数を受け取る関数、関数を選択して
 束縛するコード、callback-style の API を表現できます。
 
-このドラフトは lambda expression、closure capture、partial application、関数を返す
-関数を導入しません。最初の対象は、名前を持つ関数を値として参照し、明示的な関数型
-注釈で検査する範囲です。
+このドラフトは lambda expression、closure capture、partial application を導入しません。
+最初の対象は、名前を持つ関数を値として参照し、明示的な関数型注釈で検査する範囲です。
+関数を返す関数は、戻り値型に関数型を書くことで表現できます。
 
 ## Motivation
 
@@ -58,8 +58,8 @@ type_list =
 value: fn() -> I32 = read_cached_value
 ```
 
-このドラフトでは、関数型を戻り値型に持つ関数定義は定義しません。実装は
-`fn make() -> fn(I32) -> I32` のような関数を返す関数を MUST reject します。
+関数型の戻り値型も通常の `type` です。そのため、関数を返す関数は
+`fn make() -> fn(I32) -> I32` のように書けます。
 
 関数型は通常の `type` なので、generic type の型引数としても使えます。
 
@@ -138,6 +138,30 @@ MUST reject されます。
 effectful な関数型 `fn!(...) -> T` が期待される場所には effectful な関数値を渡せます。
 pure な関数値を `fn!(...) -> T` として扱うことを許すかどうかは未決定です。この
 ドラフトでは実装はどちらを選んでもよいですが、選択は一貫していなければなりません。
+
+### Function Return Values
+
+関数は関数型を返せます。
+
+```emela
+fn add_one(value: I32) -> I32 {
+  value + 1
+}
+
+fn identity(value: I32) -> I32 {
+  value
+}
+
+fn select(flag: Bool) -> fn(I32) -> I32 {
+  match flag {
+    true -> add_one
+    false -> identity
+  }
+}
+```
+
+戻り値式の型は、戻り値注釈の関数型と一致しなければなりません。複数の branch が
+関数値を返す場合、各 branch の関数型は同じでなければなりません。
 
 ### Local Bindings
 
@@ -252,6 +276,30 @@ fn main() -> I32 {
 }
 ```
 
+関数を返す例:
+
+```emela
+fn double(value: I32) -> I32 {
+  value * 2
+}
+
+fn identity(value: I32) -> I32 {
+  value
+}
+
+fn choose_transform(flag: Bool) -> fn(I32) -> I32 {
+  match flag {
+    true -> double
+    false -> identity
+  }
+}
+
+fn main() -> I32 {
+  transform: fn(I32) -> I32 = choose_transform(true)
+  transform(21)
+}
+```
+
 effectful な callback を受け取る例:
 
 ```emela
@@ -283,7 +331,6 @@ callee が静的に既知であれば direct call へ最適化してもよいで
 
 - pure な関数値を `fn!(...) -> T` として扱う subtyping を許すか。
 - function type に capability row を書く構文。
-- 関数を戻り値として返すことをいつ許すか。
 - lambda expression と closure capture の構文。
 - partial application または currying を導入するか。
 - function pointer representation と ABI を固定するか。
