@@ -148,6 +148,19 @@ target aarch64-apple-darwin provides {
   Network
 }
 
+target x86_64-unknown-linux-gnu provides {
+  Stdout,
+  Stdin,
+  Stderr,
+  FileRead,
+  FileWrite,
+  Clock,
+  Random,
+  Env,
+  Process,
+  Network
+}
+
 target wasm32-unknown-unknown provides {
 }
 
