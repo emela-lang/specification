@@ -64,3 +64,6 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0001: Effect System](specs/0001-effect-system.md)
 - [0002: Traits and Operators](specs/0002-traits-and-operators.md)
 - [0003: Platform Capabilities](specs/0003-platform-capabilities.md)
+- [0004: Struct Types](specs/0004-struct-types.md)
+- [0005: Enum Types](specs/0005-enum-types.md)
+- [0006: Result Type](specs/0006-result-type.md)
