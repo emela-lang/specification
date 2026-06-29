@@ -47,17 +47,17 @@ let add: (Int, Int) -> Int uses {} = fn (x: Int, y: Int) -> Int uses {} {
 (Int) -> Int
 ```
 
-これは Effect を発生させる関数型で，`fs` と `IoError` を発生させうる関数型である．
+これは Effect を発生させる関数型で，`fs` を発生させうる関数型である．
 
 ```emela
-(Path) -> String uses { fs, throw IoError }
+(Path) -> String uses { fs }
 ```
 
 `uses` の後ろに書かれた Effect は型の一部として扱われるため，以下の関数型は違う型として扱われることを期待する．
 
 ```emela
 (Path) -> String uses {}
-(Path) -> String uses { fs, throw IoError }
+(Path) -> String uses { fs }
 ```
 
 ### 関数値
@@ -150,19 +150,19 @@ add10(5) // 15
 
 ### 関数の呼び出し
 
-関数呼び出しは、関数値に対する call として扱う。
+関数呼び出しは関数値に対する call として扱う．
 
 ```emela
 f(a, b)
 ```
 
-ここで f は名前付き関数でも、変数に束縛された関数値でもよい。
+ここで f は名前付き関数でも，変数に束縛された関数値でもよい．
 
 ```emela
 add(1, 2)
 ```
 
-は、名前 add に束縛された関数値を呼び出す。
+は，名前 add に束縛された関数値を呼び出す．
 
 ```emela
 let f = add
@@ -238,7 +238,7 @@ applyPure(1, add1)
 以下のコードは無効である．
 
 ```emela
-fn readThenAdd(x: Int) -> Int uses { fs, throw IoError } {
+fn readThenAdd(x: Int) -> Int uses { fs } {
     ...
 }
 
@@ -250,8 +250,8 @@ effectful な関数を受け取りたい場合は，引数の関数型にも eff
 ```emela
 fn applyFs(
     x: Int,
-    f: (Int) -> Int uses { fs, throw IoError }
-) -> Int uses { fs, throw IoError } {
+    f: (Int) -> Int uses { fs }
+) -> Int uses { fs } {
     f(x)
 }
 ```

@@ -40,8 +40,8 @@ Function
 ### Examples
 
 ```emela
-name = "alice"
-xs = [1, 2, 3]
+let name = "alice"
+let xs = [1, 2, 3]
 ```
 
 型は以下のとおりになる．
