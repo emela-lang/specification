@@ -74,3 +74,4 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0011: Error handling](specs/0011-error-handling.md)
 - [0012: Typed IR](specs/0012-typed-ir.md)
 - [0013: Platform Functions and Runtime Provision](specs/0013-platform-functions-and-runtime-provision.md)
+- [0014: Generic Functions](specs/0014-generic-functions.md)
