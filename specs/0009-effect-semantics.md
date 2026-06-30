@@ -46,6 +46,8 @@ net
 host
 ```
 
+組み込み Effect を発生させる platform 関数と，それを Runtime（backend）が供給する境界・契約は 0013 で定義する．
+
 ### throws と effect
 
 error は `uses` の effect row では追跡しない．error は関数型の `throws E` 節という独立した channel で追跡する (0008, 0011)．
