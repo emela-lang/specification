@@ -34,7 +34,7 @@ fn read(path: Path) -> String throws IoError uses { fs }
 fn parse(input: String) -> Ast throws ParseError uses {}
 ```
 
-- `throws E` を持たない関数は error を送出しない．
+- `throws E` を持たない関数は error を送出しない．これは `throws Never` と等価である．`Never` 型の値は存在しないため，`throws Never` を宣言する関数は error を送出しえない．
 - `E` は単一の型である．複数種類の error を扱う場合は enum を用いる．
 - `throws` は `uses` とは独立した channel であり，capability を `throws` に書くことはできない．
 
@@ -284,6 +284,14 @@ fn head<T>(xs: Array<T>) -> T uses {} {
 WASM / WAMR では panic は runtime trap, runtime-provided panic handler に lowering しても良い．
 
 WAMR embedder は panic message をログに出して異常終了しても良いが，通常評価へ復帰してはならない．
+
+## エントリポイント
+
+プログラムのエントリポイント `main` の `throws` は `Never` でなければならない (MUST)．
+
+`throws Never` は non-throwing（error を送出しない）を意味し，`throws` 節の省略と等価である．したがって `main` は `throws` 節を省略するか，`throws Never` を宣言する．`Never` 以外の error 型を `main` の `throws` に宣言した場合はコンパイルエラーとする．
+
+`main` の本体が throwing な呼び出しや `throw` を含む場合は，`main` 自身が `try` / `catch` で error を処理するか，`panic` で異常終了させなければならない．error を `main` の外へ伝播することはできない．
 
 ## IR Lowering
 
