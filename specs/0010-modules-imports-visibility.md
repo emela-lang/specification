@@ -9,7 +9,7 @@ pub fn getUser(id: UserId) -> Option<User> uses { db } {
     ...
 }
 
-fn decode(raw: String) -> Result<User, DecodeError> {
+fn decode(raw: String) -> User throws DecodeError {
     ...
 }
 ```

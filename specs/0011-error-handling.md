@@ -1,123 +1,145 @@
 ## 0011: Error handling
 
-Status: Approved
+Status: Draft
 
-回復可能な失敗を Result<T, E>, Option<T> で表現する．
+回復可能な失敗は，関数型の `throws E` 節と `throw` 式で表現する．
 
-回復不能な異常，例外は panic で処理する．
+値の不在は `Option<T>` で表現する．
 
-? operator は， Result / Option の短絡評価のための糖衣構文として導入する．
+回復不能な異常は `panic` で処理する．
+
+`?` operator は throwing な呼び出しの error を呼び出し元へ伝播する短絡評価 operator として導入する．
+
+`try` / `catch` 式は送出された error を捕捉してハンドルする．
 
 ## Error の種類
 
-Option<T>: 値が存在しない
+`throws E`: 回復可能な失敗 (error channel)
 
-Result<T, E>: 回復可能な失敗
+`Option<T>`: 値が存在しない
 
-panic: 回復不能な異常
+`panic`: 回復不能な異常
 
-## Option
+回復可能な失敗を `Result<T, E>` で表現することはしない．`Result` は組み込み型ではない．
 
-Option<T> は値が存在しない可能性を表す組み込み enum
+## throws と throw
+
+### throws 節
+
+関数が送出しうる error の型は，戻り値型に続く `throws E` 節で宣言する (0008)．
 
 ```emela
-pub enum Option<T> {
-    Some(T)
-    None
+fn read(path: Path) -> String throws IoError uses { fs }
+
+fn parse(input: String) -> Ast throws ParseError uses {}
+```
+
+- `throws E` を持たない関数は error を送出しない．
+- `E` は単一の型である．複数種類の error を扱う場合は enum を用いる．
+- `throws` は `uses` とは独立した channel であり，capability を `throws` に書くことはできない．
+
+```emela
+enum LoadError {
+    NotFound
+    Decode(DecodeError)
 }
+
+fn load(path: Path) -> Config throws LoadError uses { fs }
 ```
 
-```emela
-fn get<T>(xs: Array<T>, index: Int) -> Option<T> uses {}
+### throw 式
 
-fn findUser(id: UserId) -> Option<User> uses {}
+`throw e` は error `e` を送出する．
+
+```emela
+throw IoError.NotFound
 ```
 
-Option<T> は失敗の理由を持たない．理由が必要な場合は，Result<T, E> を用いる．
-
-
-## Result
-
-Result<T, E> は回復可能な失敗を表す組み込み enum
+- `throw e` は通常の値を返さない．型は `Never` であり，任意の期待型に適合する．
+- `throw e` が現れる関数は `throws E` を宣言していなければならず，`e` の型は `E` に適合していなければならない．ただし `throw e` が `try` block 内にある場合は，その error は `catch` に捕捉される (後述)．
+- `throw` は capability ではないため，`uses` には現れない．
 
 ```emela
-pub enum Result<T, E> {
-    Ok(T)
-    Err(E)
-}
-```
-
-```emela
-fn read(path: Path) -> Result<String, IoError> uses { fs }
-
-fn parse(input: String) -> Result<Ast, ParseError> uses {}
-
-fn decodeUser(input: String) -> Result<User, DecodeError> uses {}
-```
-
-## Panic
-
-panic は組み込みの回復不能エラーである．
-
-panic は現在の通常評価を終了し，プログラムを回復不能な異常終了へ移行させる．
-
-panic は通常の値を返さず，型は bottom type 的に扱っても良い．
-
-`Never` は任意の期待型に適合する．
-
-```emela
-fn head<T>(xs: Array<T>) -> T uses {} {
-    match Array.get(xs, 0) {
-        Some(x) -> x
-        None -> panic("empty array")
+fn lookup(id: UserId, table: Table) -> User throws NotFound uses {} {
+    match Table.get(table, id) {
+        Some(user) -> user
+        None -> throw NotFound
     }
 }
 ```
 
-panic は通常のエラー処理に使ってはならない．
+## throwing な式の扱い
 
-WASM / WAMR では panic は runtime trap, runtime-provided panic handler に lowering しても良い．
+`throws E` を持つ関数の呼び出しを **throwing な呼び出し** と呼ぶ．throwing な呼び出しの成功値の型は `T` であるが，error を素通りさせることはできない．
 
-WAMR embedder は panic message をログに出して異常終了しても良いが，通常評価へ復帰してはならない．
+throwing な呼び出しは，次のいずれかの位置に置かなければならない．これを満たさない throwing な呼び出しはコンパイルエラーとする．
+
+1. `?` を付けて error を呼び出し元へ伝播する．
+2. `try` block 内に置き，`catch` で捕捉する．
 
 ## ? Operator
 
-? は Result<T, E> または Option<T> に対する短絡評価 operator
+`?` は throwing な呼び出しの error を，現在の関数の `throws` 節へ伝播する短絡評価 operator である．
 
-IDEA: Unwrappable のような trait を実装して，? を使える型をユーザー側でも実装できるようにさせる？
+`?` は throw, 早期 return に対する糖衣構文と捉えてよい．
 
-? は match, 早期 return に対する糖衣構文である．
+### throws に対する ?
 
-### Result
-
-expr の型が Result<T, E> の場合，以下のコードは等価である．
+`expr` が `T throws E` を持つ throwing な呼び出しの場合，以下のコードは等価である．
 
 ```emela
 let value = expr?
 
-let value = match expr {
-    Ok(v) -> v
-    Err(e) -> return Err(e)
+let value = try {
+    expr
+} catch {
+    e -> throw e
 }
 ```
 
-expr? を使う関数の戻り値の型は Result<U, E> である必要がある．
+`expr?` を使う関数の戻り値の型は `throws E` を宣言していなければならない．
 
 ```emela
-fn load(path: Path) -> Result<Config, IoError> uses { fs } {
+fn load(path: Path) -> Config throws IoError uses { fs } {
     let text = read(path)?
-    parseConfig(text)?
+    parse(text)?
 }
 
-read(path): Result<String, IoError>
-parseConfig(text): Result<Config, IoError>
+read(path): String throws IoError uses { fs }
+parse(text): Config throws IoError uses {}
 ```
 
-なので， ? は IoError をそのまま返すことができる．
+`read` と `parse` の error 型は `IoError` であり，`load` の `throws IoError` と一致するため，`?` はそのまま伝播できる．
 
-### Option
- 
-expr? 型が Option<T> の場合，以下のコードは等価である．
+### error 型の一致
+
+`?` が伝播する error 型は，現在の関数が宣言する error 型と一致していなければならない．
+
+```emela
+fn load(path: Path) -> Config throws LoadError uses { fs } {
+    let text = read(path)?    // read は throws IoError なので reject
+    parse(text)?
+}
+```
+
+error 型が異なる場合は明示的に変換する．
+
+```emela
+fn load(path: Path) -> Config throws LoadError uses { fs } {
+    let text = try {
+        read(path)
+    } catch {
+        e -> throw LoadError.Io(e)
+    }
+    parse(text)?
+}
+```
+
+後続仕様で `From` / `Into` 的な error 変換を導入してもよい．
+
+### Option に対する ?
+
+`?` は `Option<T>` に対しても使える．`expr` が `Option<T>` の場合，以下のコードは等価である．
 
 ```emela
 let value = expr?
@@ -128,7 +150,7 @@ let value = match expr {
 }
 ```
 
-expr? を使う関数の戻り値の型は Option<U> である必要がある．
+`expr?` を使う関数の戻り値の型は `Option<U>` でなければならない．
 
 ```emela
 fn firstName(user: User) -> Option<String> uses {} {
@@ -137,33 +159,144 @@ fn firstName(user: User) -> Option<String> uses {} {
 }
 ```
 
+`?` の意味は対象式の型によって決まる．throwing な呼び出しに対しては error を `throws` へ伝播し，`Option<T>` に対しては `None` を伝播する．両者は型により一意に区別される．
+
 ### No Implicit Conversion
 
-Option<T> と Result<T, E> は暗黙的に変換をしない．
+`throws E` の error channel と `Option<T>` は暗黙的に変換しない．`Option<T>` を返す関数に対して `?` を使っても error は送出されず，throwing な呼び出しに対して `?` を使っても `None` は伝播しない．
 
 ### Evaluation Order
 
-? は postfix operator であり，対象の式を1回だけ評価する．
+`?` は postfix operator であり，対象の式を1回だけ評価する．
 
 ```emela
 let x = f()?
 ```
 
-1. f() を評価する
-2. 結果が Ok(v) / Some(v) なら v を取り出す
-3. 結果が Err(e) / None なら現在の関数から return する
+1. `f()` を評価する
+2. 結果が成功値 / `Some(v)` なら値を取り出す
+3. error が送出された / `None` なら現在の関数から短絡する
 
 ```emela
-fn combine() -> Result<Int, E> uses {} {
+fn combine() -> Int throws E uses {} {
     let x = a()?
     let y = b()?
-    Ok(x + y)
+    x + y
 }
 ```
 
-a() が Err を返した場合，b() は評価されない．
+`a()` が error を送出した場合，`b()` は評価されない．
+
+### ? and Effects
+
+`?` 自体は capability effect を発生させない．`expr?` の effect は `expr` の effect と同じである．
+
+```emela
+let text = read(path)?
+```
+
+`read(path): String throws IoError uses { fs }` の場合，この式全体も `uses { fs }` を要求する．
+
+## try / catch 式
+
+`try` / `catch` は送出された error を捕捉してハンドルする式である．
+
+```emela
+let cfg = try {
+    load(path)
+} catch {
+    IoError.NotFound -> defaultConfig()
+    e -> panic("unrecoverable")
+}
+```
+
+### 意味論
+
+- `try { block } catch { arms }` は式である．
+- `block` を評価する．`block` が成功値 `v` で完了した場合，`try` / `catch` 式全体の値は `v` であり，`catch` は評価されない．
+- `block` の評価中に error `e` が送出された場合，`e` を `catch` の arm に対して上から順に pattern match する．一致した arm の本体を評価し，その値が式全体の値となる．
+- `try` block 内では throwing な呼び出しに `?` を付ける必要はない．送出された error はすべて `catch` に routing される．
+
+### 型
+
+`try` / `catch` 式の型は，`block` の成功値の型と，すべての `catch` arm 本体の型の共通型である．`match` と同様に，すべての分岐は同じ型を返さなければならない．
+
+### exhaustiveness
+
+`catch` の arm は，`block` 内で送出されうる error 型を網羅していなければならない (`match` の exhaustiveness と同じ)．wildcard arm を用いてよい．
+
+```emela
+try {
+    read(path)
+} catch {
+    e -> defaultText()
+}
+```
+
+### error channel の解消
+
+`block` 内で送出される error を `catch` がすべてハンドルした場合，`try` / `catch` 式自体は error を送出しない．したがって `throws` を宣言しない関数でも，throwing な呼び出しを `try` / `catch` で包めば呼び出せる．
+
+```emela
+fn loadOrDefault(path: Path) -> Config uses { fs } {
+    try {
+        read(path)
+        parse(path)
+    } catch {
+        e -> defaultConfig()
+    }
+}
+```
+
+`catch` arm の本体内で再度 `throw` すれば error を再送出できる．その場合，関数は対応する `throws` を宣言していなければならない．
+
+### effect
+
+`try` / `catch` の effect は `block` と到達しうる `catch` arm 本体の effect の和集合である．
+
+```text
+effects(try/catch) =
+    effects(block)
+    ∪ effects(reachable catch arm bodies)
+```
+
+## Panic
+
+`panic` は組み込みの回復不能エラーである．
+
+`panic` は現在の通常評価を終了し，プログラムを回復不能な異常終了へ移行させる．
+
+`panic` は通常の値を返さず，型は `Never` であり，任意の期待型に適合する．
+
+```emela
+fn head<T>(xs: Array<T>) -> T uses {} {
+    match Array.get(xs, 0) {
+        Some(x) -> x
+        None -> panic("empty array")
+    }
+}
+```
+
+`panic` は回復可能な失敗には使ってはならない．回復可能な失敗は `throws` または `Option` で表現する．
+
+`panic` は `throws` でも `uses` でもなく，どちらの channel にも現れない．
+
+WASM / WAMR では panic は runtime trap, runtime-provided panic handler に lowering しても良い．
+
+WAMR embedder は panic message をログに出して異常終了しても良いが，通常評価へ復帰してはならない．
 
 ## IR Lowering
+
+`throws E` を持つ関数は，IR レベルでは内部的に成功値と error の tagged union (`Ok` / `Err`) を返す関数へ lowering してよい．これは実装上の表現であり，表面言語には現れない．
+
+```emela
+throw e
+```
+
+```text
+%err = make_internal_err e
+return %err
+```
 
 ```emela
 let text = read(path)?
@@ -172,19 +305,45 @@ let text = read(path)?
 ```text
 %r = call @read(path)
 
-switch_enum %r {
+switch_internal %r {
     Ok => block_ok
     Err => block_err
 }
 
 block_ok:
-    %text = enum_payload %r 0
+    %text = internal_payload %r 0
     continue %text
 
 block_err:
-    %e = enum_payload %r 0
-    %out = make_enum Err(%e)
+    %e = internal_payload %r 0
+    %out = make_internal_err %e
     return %out
+```
+
+```emela
+try {
+    read(path)
+} catch {
+    e -> defaultText()
+}
+```
+
+```text
+%r = call @read(path)
+
+switch_internal %r {
+    Ok => block_ok
+    Err => block_catch
+}
+
+block_ok:
+    %v = internal_payload %r 0
+    continue %v
+
+block_catch:
+    %e = internal_payload %r 0
+    %d = call @defaultText()
+    continue %d
 ```
 
 ```emela
@@ -218,3 +377,9 @@ call @__emela_panic(%msg)
 unreachable
 ```
 
+## Open Questions
+
+- `throws A | B` のような union error 型を許すか．
+- error 型の暗黙変換 (`From` / `Into`) を導入するか．
+- `try` block 内から `catch` を飛び越えて関数の `throws` へ伝播する手段 (`?` の許可) を入れるか．
+- `?` を使える型をユーザーが定義できる trait (例: `Unwrappable`) を導入するか．

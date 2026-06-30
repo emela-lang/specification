@@ -7,9 +7,9 @@ Status: Approved
 ### Enum
 
 ```emela
-enum Result<T, E> {
-    Ok(T)
-    Err(E)
+enum Either<L, R> {
+    Left(L)
+    Right(R)
 }
 ```
 
@@ -28,9 +28,9 @@ enum Color {
 pattern は上から順に判定される．
 
 ```emela
-match result {
-    Ok(v) -> v
-    Err(e) -> Err(e)
+match value {
+    Some(v) -> v
+    None -> 0
 }
 ```
 

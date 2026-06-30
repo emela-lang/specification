@@ -1,4 +1,4 @@
-## 0010: Typed IR
+## 0012: Typed IR
 
 Status: Draft
 

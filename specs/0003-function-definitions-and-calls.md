@@ -31,7 +31,7 @@ let add: (Int, Int) -> Int uses {} = fn (x: Int, y: Int) -> Int uses {} {
 
 ### 関数型
 
-関数型は引数型，戻り値型，Effect を持つ．
+関数型は引数型，戻り値型，`throws` 節 (error 型)，Effect を持つ．`throws` 節と error 処理の意味論は 0008, 0011 で定義する．
 
 これは `Int` を2つ受取り，`Int` を返し，effect を発生させない関数型．
 

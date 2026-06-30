@@ -46,3 +46,15 @@ net
 host
 ```
 
+### throws と effect
+
+error は `uses` の effect row では追跡しない．error は関数型の `throws E` 節という独立した channel で追跡する (0008, 0011)．
+
+したがって，`throw` や throwing な呼び出しの `?` は capability effect を発生させない．`throws` の有無は `uses` の内容に影響しない．
+
+```emela
+fn read(path: Path) -> String throws IoError uses { fs }
+```
+
+この関数は capability として `fs` を要求し (`uses { fs }`)，error channel として `IoError` を送出しうる (`throws IoError`)．両者は別の channel である．
+
