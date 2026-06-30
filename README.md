@@ -75,3 +75,6 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0012: Typed IR](specs/0012-typed-ir.md)
 - [0013: Platform Functions and Runtime Provision](specs/0013-platform-functions-and-runtime-provision.md)
 - [0014: Generic Functions](specs/0014-generic-functions.md)
+- [0015: If Expression](specs/0015-if-expression.md)
+- [0016: Integer Division and Remainder](specs/0016-integer-division-and-remainder.md)
+- [0017: Char and String Concatenation](specs/0017-char-and-string-concatenation.md)
