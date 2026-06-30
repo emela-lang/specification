@@ -78,3 +78,4 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0015: If Expression](specs/0015-if-expression.md)
 - [0016: Integer Division and Remainder](specs/0016-integer-division-and-remainder.md)
 - [0017: Char and String Concatenation](specs/0017-char-and-string-concatenation.md)
+- [0018: Qualified Imports and Calls](specs/0018-qualified-imports-and-calls.md)
