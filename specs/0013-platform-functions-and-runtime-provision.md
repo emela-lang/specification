@@ -2,7 +2,8 @@
 
 Status: Draft
 
-副作用の実体（capability effect の解決）を Runtime が提供する境界を定義する仕様．
+副作用の実体（capability effect の解決）を Runtime が提供する境界を定義する仕様．（純粋な
+プリミティブ演算を backend が native 命令として供給する対の仕組みは spec 0021 (Intrinsic Functions)．）
 
 言語は **platform 関数** の標準インターフェース（名前・型・capability）を定める．Emela コードは `extern fn` でそれを参照し，実体は持たない．各 backend / target は，そのインターフェースの**部分集合**を実装する．これにより，副作用の解決は必ず Runtime が行い，かつ Emela ソースは backend 非依存になる．
 

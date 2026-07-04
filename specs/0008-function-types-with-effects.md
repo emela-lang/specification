@@ -37,6 +37,9 @@ A -> T uses F
 A -> T
 ```
 
+なお，この省略規則は**関数型の表記**についてのものである．**関数定義**で `uses` 節を省略した場合の
+意味（本体からの推論）は spec 0023 (Effect Inference and Subsumption) が定める．
+
 組み合わせ:
 
 ```text
@@ -56,18 +59,24 @@ Path -> String throws IoError uses { fs }
 
 ### 高階関数における Effect 型
 
+effect row は effect-row 変数 `'e`（sigil `'` 付き）で受け取り，伝播できる．effect-row 変数は型
+パラメータ `<>` とは別カテゴリで，`<>` には書かない．意味論は spec 0022 (Effect-Row Polymorphism) で
+定義する．
+
 ```emela
 fn map<T, U>(
   xs: Array<T>,
-  f: T -> U uses e
-) -> Array<U> uses e
+  f: (T) -> U uses 'e
+) -> Array<U> uses 'e
 ```
 
-`throws` についても同様に，error 型を型変数として受け取り，伝播させることができる．
+`throws` についても，error 型を型変数として受け取り，伝播させることができる．ここで `E` は通常の型
+パラメータ（0014）である．`throws` は単一の error 型を取る（0011）ため，これは effect-row 変数ではなく
+型変数であり，spec 0022 ではなく 0014 の対象である．
 
 ```emela
 fn mapThrows<T, U, E>(
   xs: Array<T>,
-  f: T -> U throws E
+  f: (T) -> U throws E
 ) -> Array<U> throws E
 ```

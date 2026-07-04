@@ -1,6 +1,6 @@
 ## 0002: Bindings and Mutation
 
-Status: Approved
+Status: Accepted
 
 ### 仕様
 

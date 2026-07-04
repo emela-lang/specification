@@ -1,6 +1,6 @@
 ## 0004: Blocks and Expression Semantics
 
-Status: Approved
+Status: Accepted
 
 - block は式である．
 - `match` は式である．

@@ -43,10 +43,12 @@ clock
 random
 log
 net
-host
+host.*
 ```
 
-組み込み Effect を発生させる platform 関数と，それを Runtime（backend）が供給する境界・契約は 0013 で定義する．
+`host` は単独の capability ではなく，embedder（ホスト実装者）が定義する capability の**名前空間**である．常に `host.<cap>` の形で用いる（spec 0026 で定義する）．
+
+組み込み Effect を発生させる platform 関数と，それを Runtime（backend）が供給する境界・契約は 0013 で定義する．embedder による `host.*` の拡張は 0026 で定義する．
 
 ### throws と effect
 

@@ -1,6 +1,6 @@
 ## 0005: Enum and match expression
 
-Status: Approved
+Status: Accepted
 
 `Enum` と `match`， exhaustiveness check を定義する．
 
@@ -20,6 +20,22 @@ enum Color {
     Blue
 }
 ```
+
+### Variant へのアクセス
+
+enum の variant は，enum 名で修飾した**型パス** `Enum::Variant` で参照・構築する．
+区切りは `.`（ドット）ではなく `::`（二重コロン）である．
+
+```emela
+let x = Color::Red
+let y = Either::Left(1)
+```
+
+- `::` の左辺は enum 型名でなければならない．`.`（ドット）は値のメンバ／モジュール修飾呼び出し
+  （spec 0018）に予約され，variant アクセスには用いない．`Color.Red` は error である．
+- payload のない variant（`Color::Red`）はそれ自体が値である．payload を持つ variant
+  （`Either::Left(1)`）は引数を伴って構築する．
+- 型パス `Enum::Variant` の解決規則は spec 0018 に従う（`.` パスとは構文的に分離される）．
 
 ### Match 式
 
@@ -55,6 +71,9 @@ match x {
 }
 ```
 
+pattern の variant は裸の `Variant`，または enum 名で修飾した `Enum::Variant` で書ける
+（修飾も `::` を用い，`Enum.Variant` は使わない）．
+
 unreachable pattern はエラーにする．
 
 ### Pattern guard
@@ -65,7 +84,7 @@ unreachable pattern はエラーにする．
 match value {
     Some(x) if x > 0 -> x
     Some(_) -> 0
-    None => -1
+    None -> -1
 }
 ```
 
@@ -87,8 +106,8 @@ guard 内では、その pattern で束縛された変数を参照できる．
 
 ```emela
 match user {
-    User { age, name } if age >= 20 => name
-    User { name, ... } => name
+    User { age, name } if age >= 20 -> name
+    User { name, ... } -> name
 }
 ```
 
@@ -96,8 +115,8 @@ guard は式なので effect を持ちうる．
 
 ```emela
 match path {
-    Some(p) if exists(p) => read(p)
-    _ => ""
+    Some(p) if exists(p) -> read(p)
+    _ -> ""
 }
 ```
 
@@ -113,9 +132,9 @@ effects(match) =
 guard 付き arm は、同じ pattern の guard なし arm より前に置く必要がある。
 ```emela
 match x {
-    Some(_) => 0
-    Some(v) if v > 0 => v
-    None => -1
+    Some(_) -> 0
+    Some(v) if v > 0 -> v
+    None -> -1
 }
 ```
 
@@ -127,7 +146,7 @@ pattern guard 付き arm は，exhaustiveness check では完全な coverage と
 
 ```emela
 match x {
-    Some(v) if v > 0 => v
+    Some(v) if v > 0 -> v
 }
 ```
 
@@ -135,9 +154,9 @@ match x {
 
 ```emela
 match x {
-    Some(v) if v > 0 => v
-    Some(_) => 0
-    None => -1
+    Some(v) if v > 0 -> v
+    Some(_) -> 0
+    None -> -1
 }
 ```
 
@@ -145,9 +164,9 @@ match x {
 
 ```emela
 match value {
-    Some(x) if x > 0 => x
-    Some(_) => 0
-    None => -1
+    Some(x) if x > 0 -> x
+    Some(_) -> 0
+    None -> -1
 }
 ```
 

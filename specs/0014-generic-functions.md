@@ -18,11 +18,11 @@ Status: Draft
 
 ジェネリック関数の構文は既にいくつかの仕様で前方参照されている．
 
-- 0008 は高階関数の例として `fn map<T, U>(xs: Array<T>, f: T -> U uses e) -> Array<U>` を示す．
+- 0008 は高階関数の例として `fn map<T, U>(xs: Array<T>, f: (T) -> U uses 'e) -> Array<U> uses 'e` を示す．
 - 0011 は `fn head<T>(xs: Array<T>) -> T` を `panic` の例で用いる．
-- 0003 / 0008 は effect row に対するジェネリクス `fn apply<E>(...)` を「この仕様では策定しない」と明記する．
+- 0003 / 0008 は effect row に対するジェネリクス（`fn apply<T>(..., uses 'e)` / `fn map<T, U>(..., uses 'e)`）を予告する（effect-row 多相は spec 0022 で定義する）．
 
-本仕様はこのうち **型パラメータ** を正式に定義する．effect row / error 型に対するジェネリクスは扱わず，将来仕様に送る (Open Questions)．
+本仕様はこのうち **型パラメータ** を正式に定義する．effect row に対するジェネリクス（effect-row 多相）は spec 0022 (Effect-Row Polymorphism) で定義する．error 型に対する行多相（union error）は将来仕様に送る (Open Questions)．
 
 ### Specification
 
@@ -110,13 +110,15 @@ fn pick<T>() -> T uses {}      -- error: `T` does not appear in any parameter ty
 
 #### effect と throws
 
-ジェネリック関数も，具体的な effect row (`uses`) と error 型 (`throws`) を宣言する（省略は従来通り）．effect row や error 型を型変数にする多相（effect-row / error-row polymorphism）は本仕様では扱わない．
+ジェネリック関数も，具体的な effect row (`uses`) と error 型 (`throws`) を宣言できる（省略は従来通り）．**effect row を型変数にする多相（effect-row polymorphism）は spec 0022 で定義する**（例 `fn map<T, U>(xs, f: (T) -> U uses 'e) -> Array<U> uses 'e`．row 変数は sigil `'` 付きで `<>` の外）．error 型に対する行多相（union error）は本仕様では扱わない．
+
+なお，`throws E` の `E` に通常の型パラメータを用いること（単一の error 型を総称する）は本仕様の範囲であり，有効である（`throws` は単一の型を取る，0011）．
 
 ```emela
 fn map<T, U>(xs: Array<T>, f: (T) -> U uses {}) -> Array<U> uses {}
 ```
 
-ここで `f` の effect は具体的に `uses {}` であり，`map` 自身も `uses {}` である．
+これは effect を具体的に `uses {}` へ固定した版で，effect-row 変数を使わない従来形である．effect-row 変数を用いた総称版は 0022 を参照．
 
 #### 制限
 
@@ -169,8 +171,8 @@ fn first<T>(xs: Array<T>) -> Option<T> uses {} {
 ### Open Questions
 
 - 明示的な型引数構文（`identity<Int>(x)` 相当）を導入するか．比較演算子 `<` との構文的曖昧性をどう解決するか（turbofish 的構文など）．
-- effect row に対するジェネリクス (`uses E`) と error 型に対するジェネリクス (`throws E`) の導入（0003 / 0008 が予告）．
+- error 型に対する行多相（union error / `throws` の行変数）の導入．effect-row 多相 (`uses 'e`) は spec 0022 で定義済み．
 - いずれのパラメータ型にも現れない型パラメータ（`pick<T>() -> T` のような戻り値専用の型パラメータ）を，明示的型引数の導入とあわせて許可するか．
-- ジェネリックなデータ型宣言（ユーザー定義のジェネリック enum / record，0005 の `enum Either<L, R>`）．
+- ジェネリックなデータ型宣言（ユーザー定義のジェネリック enum / record，0005 の `enum Either<L, R>`）．→ spec 0028 (Generic Data Type Declarations) で実現する．
 - ジェネリック関数を第一級の値として扱う手段．
-- 型パラメータの境界 (bounds) / trait．
+- 型パラメータの境界 (bounds) / trait．→ spec 0020 (Traits) で実現する．

@@ -42,13 +42,15 @@ spec 0010 の import は，`import std.int.to_string` をすると bare 名 `to_
   - ちょうど 1 個 → その関数に解決する．
   - 2 個以上 → コンパイルエラー（曖昧）．エラーは候補それぞれの full path を列挙する（MUST）．
   - 0 個 → 名前未定義．
-- **R6（優先順位）**: あるパスの解決は次の優先順位で行う:
+- **R6（優先順位）**: ドットパス `p1.….pk` の解決は次の優先順位で行う:
   1. ローカル束縛（`let` / 引数）— bare 名のみ．
   2. 同一コンパイル単位（entry）の関数 — bare 名．import より優先（shadow）する．
-  3. 2 セグメントの enum variant（`Enum.Variant`）および組み込み変換
-     `Char.from_code` / `String.from_char`（spec 0017）．
-  4. import された関数の suffix 一致（R3）．
+  3. import された関数の suffix 一致（R3）．
 - bare 名（k = 1）は従来通り常に使える（後方互換）: full path の最短 suffix `[f]` に当たる．
+- **R7（型パスは `::`，`.` とは別系統）**: 型に紐づく名前 — enum variant（`Enum::Variant`，spec 0005）
+  および組み込み変換 `Char::from_code` / `String::from_char`（spec 0017）— は，ドット `.` ではなく
+  **二重コロン `::`** で書く型パスである．型パスは本節の `.` パス解決（R1〜R6）とは**構文的に分離**され，
+  互いに衝突しない．`::` の左辺は型名（enum 型・`Char`・`String`）であり，`Enum.Variant` は error とする．
 - private（`pub` でない）関数は，importer から**修飾パスでは参照できない**（bare 名での
   既存の振る舞いは spec 0010 / 実装に従う．本仕様はこれを変更しない）．
 
@@ -95,4 +97,6 @@ fn main() -> Int {
 - 推移的 import（モジュールが別モジュールを import する）における修飾子の付与規則．
 - モジュール全体のマージと private helper の可視性（bare 名での既存の漏れを含む）の整理．
 - 修飾された一次関数値（`let f = int.to_string`）の扱い．
-- enum 名とモジュール名が同一（2 セグメントで衝突）のときの解決．
+- ~~enum 名とモジュール名が同一（2 セグメントで衝突）のときの解決．~~
+  解決済み: enum variant は `::`（型パス），モジュール修飾呼び出しは `.` と構文的に分離した（R7）．
+  よって `Enum::Variant` と `module.function` は衝突しない．

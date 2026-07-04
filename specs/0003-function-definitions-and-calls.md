@@ -60,6 +60,9 @@ let add: (Int, Int) -> Int uses {} = fn (x: Int, y: Int) -> Int uses {} {
 (Path) -> String uses { fs }
 ```
 
+ただし，row の部分集合方向の適合（`uses {}` の関数値を `uses { fs }` が期待される位置に渡す
+subsumption）は spec 0023 が定める．
+
 ### 関数値
 
 関数は値である．
@@ -256,13 +259,13 @@ fn applyFs(
 }
 ```
 
-より一般化するなら effect row に対するジェネリクスが必要になるが，この仕様では策定しない．
+より一般化するなら effect row に対するジェネリクスが必要になる．これは spec 0022 (Effect-Row Polymorphism) で定義する（effect-row 変数は sigil `'` を付け，型パラメータ `<>` とは別カテゴリとする）．
 
 ```emela
-fn apply<E>(
-    x: Int,
-    f: (Int) -> Int uses E
-) -> Int uses E {
+fn apply<T>(
+    x: T,
+    f: (T) -> T uses 'e
+) -> T uses 'e {
     f(x)
 }
 ```

@@ -52,7 +52,7 @@ fn load(path: Path) -> Config throws LoadError uses { fs }
 `throw e` は error `e` を送出する．
 
 ```emela
-throw IoError.NotFound
+throw IoError::NotFound
 ```
 
 - `throw e` は通常の値を返さない．型は `Never` であり，任意の期待型に適合する．
@@ -129,7 +129,7 @@ fn load(path: Path) -> Config throws LoadError uses { fs } {
     let text = try {
         read(path)
     } catch {
-        e -> throw LoadError.Io(e)
+        e -> throw LoadError::Io(e)
     }
     parse(text)?
 }
@@ -137,33 +137,28 @@ fn load(path: Path) -> Config throws LoadError uses { fs } {
 
 後続仕様で `From` / `Into` 的な error 変換を導入してもよい．
 
-### Option に対する ?
+### Option には `?` を使わない
 
-`?` は `Option<T>` に対しても使える．`expr` が `Option<T>` の場合，以下のコードは等価である．
-
-```emela
-let value = expr?
-
-let value = match expr {
-    Some(v) -> v
-    None -> return None
-}
-```
-
-`expr?` を使う関数の戻り値の型は `Option<U>` でなければならない．
+`?` は throwing な呼び出し専用であり，`Option<T>` には使えない．`Option<T>` は通常の値であり，`match` またはコンビネータ（`Option.map` / `Option.and_then` / `Option.unwrap_or` など，spec 0031 で定義する）で扱う．
 
 ```emela
 fn firstName(user: User) -> Option<String> uses {} {
-    let profile = user.profile?
-    profile.firstName
+    match user.profile {
+        Some(p) -> p.firstName
+        None -> None
+    }
 }
 ```
 
-`?` の意味は対象式の型によって決まる．throwing な呼び出しに対しては error を `throws` へ伝播し，`Option<T>` に対しては `None` を伝播する．両者は型により一意に区別される．
-
 ### No Implicit Conversion
 
-`throws E` の error channel と `Option<T>` は暗黙的に変換しない．`Option<T>` を返す関数に対して `?` を使っても error は送出されず，throwing な呼び出しに対して `?` を使っても `None` は伝播しない．
+`throws E` の error channel と `Option<T>` の間に暗黙変換は無い．不在 (`None`) を回復可能な失敗として呼び出し元へ伝播したい場合は，`Option.ok_or(o, e) -> T throws E`（spec 0031）で明示的に error channel へ橋渡ししてから `?` を使う．
+
+```emela
+fn require_profile(user: User) -> Profile throws NotFound uses {} {
+    Option.ok_or(user.profile, NotFound)?
+}
+```
 
 ### Evaluation Order
 
@@ -174,8 +169,8 @@ let x = f()?
 ```
 
 1. `f()` を評価する
-2. 結果が成功値 / `Some(v)` なら値を取り出す
-3. error が送出された / `None` なら現在の関数から短絡する
+2. 成功値なら値を取り出す
+3. error が送出されたら現在の関数の `throws` へ短絡する
 
 ```emela
 fn combine() -> Int throws E uses {} {
@@ -205,7 +200,7 @@ let text = read(path)?
 let cfg = try {
     load(path)
 } catch {
-    IoError.NotFound -> defaultConfig()
+    IoError::NotFound -> defaultConfig()
     e -> panic("unrecoverable")
 }
 ```
@@ -355,27 +350,6 @@ block_catch:
 ```
 
 ```emela
-let x = maybe?
-```
-
-```text
-%r = eval maybe
-
-switch_enum %r {
-    Some => block_some
-    None => block_none
-}
-
-block_some:
-    %x = enum_payload %r 0
-    continue %x
-
-block_none:
-    %out = make_enum None
-    return %out
-```
-
-```emela
 panic("unreachable")
 ```
 
@@ -390,4 +364,3 @@ unreachable
 - `throws A | B` のような union error 型を許すか．
 - error 型の暗黙変換 (`From` / `Into`) を導入するか．
 - `try` block 内から `catch` を飛び越えて関数の `throws` へ伝播する手段 (`?` の許可) を入れるか．
-- `?` を使える型をユーザーが定義できる trait (例: `Unwrappable`) を導入するか．

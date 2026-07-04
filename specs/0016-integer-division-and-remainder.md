@@ -6,7 +6,7 @@ Status: Draft
 
 ### Summary
 
-`/`（除算）と `%`（剰余）を二項演算子として追加する．`Int / Int -> Int`（0方向への切り捨て）と `Float / Float -> Float`（実数除算），`Int % Int -> Int`（被除数の符号を持つ剰余）．0 による整数除算・剰余は trap（回復不能）．
+`/`（除算）と `%`（剰余）を二項演算子として追加する．`Int / Int -> Int`（0方向への切り捨て）と `Float / Float -> Float`（実数除算），`Int % Int -> Int`（被除数の符号を持つ剰余）．0 による整数除算・剰余は panic する（回復不能; lower 先は trap）．
 
 ### Motivation
 
@@ -20,7 +20,9 @@ Status: Draft
   - `%` は `Int % Int -> Int` のみ (MUST)．Float への `%` は型エラー．
 - `Int / Int` は**0方向への切り捨て**（truncated division）．例: `7 / 2 == 3`，`-7 / 2 == -3`．
 - `Int % Int` は被除数の符号を持つ剰余で，`a == (a / b) * b + (a % b)` を満たす．例: `7 % 2 == 1`，`-7 % 2 == -1`．
-- **0 による整数の除算・剰余は trap である**（回復不能，spec 0011 の panic と同様に通常評価へ復帰しない）．trap は `uses`（capability）にも `throws`（error channel）にも現れない．
+- **0 による整数の除算・剰余は panic する**（回復不能，spec 0011）．panic は通常評価へ復帰せず，`uses`（capability）にも `throws`（error channel）にも現れない．panic の lower 先が trap である（Compilation Notes）．
+- **`Int.min / -1`（`-2147483648 / -1`）は panic する** (MUST)．結果 `2147483648` は i32 で表現できず，WASM の `i32.div_s` はこのケースで trap する．加算等の wrap（0001）とは異なり，除算は wrap しない．
+- **`Int.min % -1` は `0` である** (MUST)．WASM の `i32.rem_s` は trap せず 0 を返す．
 - `Float / 0.0` は IEEE-754 に従い（`inf`/`nan`），trap しない．
 
 ### Examples
@@ -40,9 +42,9 @@ fn halve(n: Int) -> Int {
 この節は非規範的である．
 
 - WebAssembly: `Int` は `i32.div_s` / `i32.rem_s`，`Float` は `f64.div`．`i32.div_s`/`i32.rem_s` は 0 除数で trap するため，整数 0 除算 trap は追加コードなしで満たされる．
-- JavaScript (Tier 2): `Int` 除算は `(a / b) | 0`，剰余は `a % b`，`Float` は `a / b`．現状の JS backend は 0 除算で trap せず（`(a/0)|0 === 0`），この点は WebAssembly と挙動が異なる既知の差分である．将来 0 チェックのガードで揃える．
+- JavaScript (Tier 2): `Int` 除算は `(a / b) | 0`，剰余は `a % b`，`Float` は `a / b`．現状の JS backend は 0 除算で trap せず（`(a/0)|0 === 0`），また `Int.min / -1` も wrap する（`(a/b)|0 === -2147483648`）ため，いずれも WebAssembly と挙動が異なる既知の差分である．将来ガード（0 除数と `Int.min / -1` の panic 化）で揃える．加算等の wrap（0001）は `|0` / `Math.imul` で一致する．
 
 ### Open Questions
 
-- 0 除算を trap ではなく `throws`（回復可能 error）にする選択肢．
+- 0 除算を panic ではなく `throws`（回復可能 error）にする選択肢．
 - ビット演算やシフトなど他の整数演算をいつ追加するか．
