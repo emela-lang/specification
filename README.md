@@ -93,3 +93,4 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0030: Stdlib String Operations](specs/0030-stdlib-string.md)
 - [0031: Stdlib Option Combinators](specs/0031-stdlib-option.md)
 - [0032: Packaging and Dependency Resolution](specs/0032-packaging.md)
+- [0033: Language Server](specs/0033-language-server.md)
