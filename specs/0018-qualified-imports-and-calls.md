@@ -6,6 +6,9 @@ import した関数を，bare 名だけでなく **修飾パス**（`int.to_stri
 呼べるようにする仕様．名前空間の衝突を，import を諦めずに使用箇所で解決できるようにする．
 spec 0010（Modules, Imports, and Visibility）を拡張する．
 
+> 注（spec 0036）：effect の操作は本仕様の唯一の例外で、suffix のベア名解決が働かず
+> **修飾必須**である（`io.print` は可、ベア `print` は不可）．詳細は 0036 を参照．
+
 ## Summary
 
 - `import a.b.f` は関数 `f` を，`f` で終わる**任意の非空 suffix**で参照可能にする．
