@@ -103,3 +103,7 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0040: Unit Testing — @test and emela test](specs/0040-unit-testing.md)
 - [0041: Lang Items — the @lang Attribute](specs/0041-lang-items.md)
 - [0042: Option as a Core-Prelude Enum](specs/0042-option-as-core-prelude-enum.md)
+- [0043: Fallible Platform Functions — extern fn と throws](specs/0043-fallible-platform-functions.md)
+- [0044: HTTP Client — effect Http と std.http](specs/0044-http-client.md)
+- [0045: Self Tail Calls — 自己末尾呼び出しの保証](specs/0045-self-tail-calls.md)
+- [0046: HTTP Server — effect HttpServer と main ループ](specs/0046-http-server.md)

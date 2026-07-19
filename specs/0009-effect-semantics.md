@@ -48,6 +48,10 @@ host.*
 
 `host` は単独の capability ではなく，embedder（ホスト実装者）が定義する capability の**名前空間**である．常に `host.<cap>` の形で用いる（spec 0026 で定義する）．
 
+> 注（spec 0044 / 0046）：組み込み Effect に `Http`（0044: HTTP クライアント）・`HttpServer`
+> （0046: HTTP サーバー）を追加する．effect 名の大文字表記（`io` → `Io` 等）は 0037 に従う．
+> `net`（生ソケット）は予約のまま未定義である．
+
 組み込み Effect を発生させる platform 関数と，それを Runtime（backend）が供給する境界・契約は 0013 で定義する．embedder による `host.*` の拡張は 0026 で定義する．
 
 ### throws と effect
