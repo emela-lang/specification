@@ -7,6 +7,9 @@ Status: Draft
 
 言語は **platform 関数** の標準インターフェース（名前・型・capability）を定める．Emela コードは `extern fn` でそれを参照し，実体は持たない．各 backend / target は，そのインターフェースの**部分集合**を実装する．これにより，副作用の解決は必ず Runtime が行い，かつ Emela ソースは backend 非依存になる．
 
+> 注（spec 0036）：platform ラッパー（`print` 等）は `effect` ブロック内に置かれ，`write_stdout`
+> 等はその effect の（非公開の）操作となる．canonical platform 名・capability 検証は本仕様のまま不変．
+
 ### Summary
 
 - capability effect (0009) を発生させる唯一の手段は **platform 関数の呼び出し**である．
