@@ -98,3 +98,4 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0035: Canonical Formatting and Lint](specs/0035-canonical-formatting-and-lint.md)
 - [0036: Effect Declarations and Effect-Qualified Operations](specs/0036-effect-declarations-and-effect-operations.md)
 - [0037: Module-Unit Imports and First-Class Effects](specs/0037-module-imports-and-first-class-effects.md)
+- [0038: Core Package Embedding and the core/std Boundary](specs/0038-core-package-embedding.md)
