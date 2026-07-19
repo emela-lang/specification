@@ -10,6 +10,10 @@ Status: Draft
 > 注（spec 0036）：platform ラッパー（`print` 等）は `effect` ブロック内に置かれ，`write_stdout`
 > 等はその effect の（非公開の）操作となる．canonical platform 名・capability 検証は本仕様のまま不変．
 
+> 注（spec 0043 / 0044 / 0046）：registry のエントリは `throws E` を宣言できる（0043）．§error との
+> 分離の「`Result` / `Option` を戻り値とする形で後続仕様において追加する」は，0043 が `throws` 採用で
+> 置き換える．エントリには `http.request`（0044）と `http.server_*`（0046）が加わる．
+
 ### Summary
 
 - capability effect (0009) を発生させる唯一の手段は **platform 関数の呼び出し**である．
