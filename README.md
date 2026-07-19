@@ -108,3 +108,4 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0045: Self Tail Calls — 自己末尾呼び出しの保証](specs/0045-self-tail-calls.md)
 - [0046: HTTP Server — effect HttpServer と main ループ](specs/0046-http-server.md)
 - [0047: Monoid — combine と empty（戻り値位置 Self の解禁）](specs/0047-monoid.md)
+- [0048: ARC — WASM バックエンドの決定的参照カウント実行](specs/0048-arc-wasm.md)
