@@ -101,3 +101,5 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0038: Core Package Embedding and the core/std Boundary](specs/0038-core-package-embedding.md)
 - [0039: Attributes](specs/0039-attributes.md)
 - [0040: Unit Testing — @test and emela test](specs/0040-unit-testing.md)
+- [0041: Lang Items — the @lang Attribute](specs/0041-lang-items.md)
+- [0042: Option as a Core-Prelude Enum](specs/0042-option-as-core-prelude-enum.md)
