@@ -60,6 +60,22 @@ intrinsic fn i32_add(a: Int, b: Int) -> Int uses {}
 - 慣習として，`intrinsic fn` は標準ライブラリが宣言し，`impl`（0020）や `pub fn`（0010）で包む．
   アプリケーションは包まれた演算子・関数を用い，`intrinsic fn` を直接書く必要はない．
 
+### ジェネリック intrinsic
+
+- `intrinsic fn` は型パラメータを宣言してよい (MAY)．構文と意味は generic 関数（0014）に準じる：
+  ```emela
+  intrinsic fn array_get_unchecked<T>(a: Array<T>, i: Int) -> T uses {}
+  ```
+- ジェネリック intrinsic の呼び出しは，generic 関数と同様に **引数型から型引数を推論して単相化** される．
+  型変数（`Type::Var`）は typed IR に到達する前に具体型へ置換され，`IrExpr::Intrinsic` は具体型のみを
+  持つ（0012 の「typed IR に型変数・trait は現れない」を保つ）．
+- backend は，単相化後の `IrExpr::Intrinsic` が保持する引数型・戻り型から，必要な要素型（load/store 幅
+  等）を復元する．intrinsic 名から命令への対応は要素型に対して一様であり，型引数ごとに別の intrinsic 名を
+  要さない．
+- 例: `Array` の基本操作 `array_length<T>` / `array_get_unchecked<T>` / `array_push<T>`（0007）は
+  ジェネリック intrinsic として供給される．安全な `array_get<T> -> Option<T>` はこれらを包む stdlib の
+  `pub fn` である．
+
 ### intrinsic インターフェースとカバレッジ
 
 - 各 backend は，自身が供給できる **intrinsic の集合** を宣言する．
@@ -104,6 +120,13 @@ intrinsic fn i32_add(a: Int, b: Int) -> Int uses {}
   `intrinsic fn`）やリテラルの `Int` 型が，明示 import なしで従来どおり解決する．
 - Core Prelude が提供する名前は，明示 import と同じ名前解決（0010 / 0018）に従う．ローカル束縛や
   同一 entry の関数は，従来どおり prelude を shadow できる（0018 R6）．
+- Core Prelude が宣言する `intrinsic fn` は，**すべての compilation unit から bare 名で可視** である
+  (MUST)．prelude はどこにも暗黙 import されるため，そこで宣言された純粋 intrinsic はモジュール境界で
+  遮られない（platform `extern` の module-private 規律（0037）とは異なる）．これにより，かつて言語
+  ビルトインとして無 import で使えた `char_from_code` / `string_from_char` / `array_length` /
+  `array_get` / `array_push` が，intrinsic 化後も無 import の bare 名で使える．prelude 以外のモジュール
+  が宣言する intrinsic（例 `std.string` の `string_char_at`）は，従来どおりその宣言モジュール内でのみ
+  bare 可視であり，公開 API は `pub fn` ラッパが担う．
 - `Show` / `to_string` を Core Prelude に含めるかは選択である．含めれば総称 `to_string` も無 import
   で使え，含めなければ従来どおり明示 import を要する（→ Open Questions）．
 
@@ -113,10 +136,15 @@ intrinsic fn i32_add(a: Int, b: Int) -> Int uses {}
   （`Int` / `Float` / `String`）に対するそれらの `impl` は Core Prelude に置かれ，本体は対応する
   `intrinsic fn`（例 `i32_add`，`i32_div_s`，`i32_rem_s`，`f64_add`，`string_concat`，`i32_eq`，
   `i32_lt_s` 等）を呼ぶ．
-- 0017 の `Char::from_code` / `String::from_char` は `intrinsic fn`（例 `char_from_code`，
-  `string_from_char`）とし，stdlib がこれを包む．
-- これらの移設後も，除算の 0 方向切り捨て・整数 0 除算 trap（0016）や，文字列連結（0017）などの
-  **観測可能な意味は，対応する intrinsic の lowering によって保存** されなければならない (MUST)．
+- 0017 の `Char::from_code` / `String::from_char` は bare 名の `intrinsic fn`（`char_from_code`，
+  `string_from_char`）とし，Core Prelude が宣言する．`::` 型パス構文での特別扱いは撤去し，`::` は enum
+  variant 専用に戻す（0018 R7）．
+- 0007 の `Array` 基本操作 `Array::length` / `Array::get` / `Array::push` は，bare 名のジェネリック
+  `intrinsic fn` `array_length<T>` / `array_get_unchecked<T>` / `array_push<T>` とし，Core Prelude が
+  宣言する．安全な `array_get<T> -> Option<T>` はこれらを包む `pub fn` である（0011）．
+- これらの移設後も，除算の 0 方向切り捨て・整数 0 除算 trap（0016）や，文字列連結（0017），配列の
+  index 前提（0007）などの **観測可能な意味は，対応する intrinsic の lowering によって保存** されなければ
+  ならない (MUST)．
 
 ## Examples
 
@@ -145,6 +173,29 @@ impl Add for Int {
 intrinsic fn char_from_code(n: Int) -> Char uses {}
 intrinsic fn string_from_char(c: Char) -> String uses {}
 intrinsic fn string_concat(a: String, b: String) -> String uses {}
+```
+
+`Array` の基本操作はジェネリック intrinsic にする：
+
+```emela
+intrinsic fn array_length<T>(a: Array<T>) -> Int uses {}
+intrinsic fn array_get_unchecked<T>(a: Array<T>, i: Int) -> T uses {}
+intrinsic fn array_push<T>(a: Array<T>, x: T) -> Array<T> uses {}
+
+-- 安全な添字アクセスは生アクセサを包む `pub fn`（境界外は `None`，0011）：
+pub fn array_get<T>(a: Array<T>, i: Int) -> Option<T> {
+    if i < 0 { None }
+    else if i < array_length(a) { Some(array_get_unchecked(a, i)) }
+    else { None }
+}
+```
+
+これらは Core Prelude が宣言するため無 import の bare 名で使える．変換の例：
+
+```emela
+fn digit(d: Int) -> String {
+    string_from_char(char_from_code(48 + d))   -- 旧 String::from_char(Char::from_code(...))
+}
 ```
 
 アプリケーションは，従来どおり明示 import なしで `+` を書ける：
@@ -180,10 +231,13 @@ impl Add for Vec2 {
 この節は非規範的な実装上の補足である．
 
 - **IR**: `intrinsic fn` の呼び出しは，専用ノード `IrExpr::Intrinsic { name, args, ret }` として
-  typed IR に保持する（`IrExpr::Platform` と並行）．既存の `CharFromCode` / `StringFromChar` /
-  `Concat` の各ノードや，算術 `BinaryOp` は，この汎用 `Intrinsic` ノードへ統合できる（backend は
-  intrinsic 名で命令テーブルを引く）．typed IR には型変数・trait は現れず，全ノードが具体型を持つ
-  という 0012 の条件を保つ（0020 の erasure と両立）．
+  typed IR に保持する（`IrExpr::Platform` と並行）．`Char::from_code` / `String::from_char` /
+  `Array::length` / `Array::get` / `Array::push` の各専用ノード（`CharFromCode` / `StringFromChar` /
+  `ArrayLength` / `ArrayGet` / `ArrayPush`）はこの汎用 `Intrinsic` ノードへ統合され，撤去された
+  （backend は intrinsic 名で命令テーブルを引き，要素型は `args`/`ret` の具体型から復元する）．
+  ジェネリック intrinsic は単相化後に `ret` を具体化してから `Intrinsic` ノードを生成するため，typed
+  IR には型変数・trait は現れず，全ノードが具体型を持つという 0012 の条件を保つ（0020 の erasure と
+  両立）．なお内部生成の文字列連結（`@test` の失敗メッセージ等）は当面 `Concat` ノードを用いてよい．
 - **registry の所在**: intrinsic 名から native 命令への対応は，target 依存であり Emela ソースに
   出せないため，各 backend（Rust 実装）に保持する．コンパイラは `intrinsic fn` 宣言の **シグネチャ
   を権威** として型検査し，「その intrinsic を選択 backend が lower できるか」を検査すれば足りる．
@@ -209,8 +263,10 @@ impl Add for Vec2 {
 - intrinsic ごとの定義域・trap の規範化（`Float` の剰余非対応，無効コードポイントに対する
   `char_from_code`（0017）の挙動，整数 0 除算 trap（0016）など）を，どこまで本仕様／各 backend で
   規定するか．
-- 0018 R6 が特別扱いしている `Char::from_code` / `String::from_char` を，本仕様で通常の stdlib 関数へ
-  移した後，当該の名前解決の特別扱いを撤去する整理．
+- （解決済み）0018 R7 が特別扱いしていた `Char::from_code` / `String::from_char`（および `Array::*`）は，
+  bare 名の intrinsic 関数（`char_from_code` / `string_from_char` / `array_length` / `array_get` /
+  `array_push`）へ移し，`::` の型パス特別扱いを撤去した（`::` は enum variant 専用）．専用 IR ノードも
+  撤去し，汎用 `IrExpr::Intrinsic` に統合した．
 - `Bool` と `if` 条件・比較結果などの言語規則を将来 trait 化するか（本仕様では表現・言語規則として
   コンパイラに残す）．
 - 分離コンパイル（library）における要求 intrinsic 集合の metadata 保持（0013 の library 規則と同様）．

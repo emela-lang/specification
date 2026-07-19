@@ -51,9 +51,13 @@ spec 0010 の import は，`import std.int.to_string` をすると bare 名 `to_
   3. import された関数の suffix 一致（R3）．
 - bare 名（k = 1）は従来通り常に使える（後方互換）: full path の最短 suffix `[f]` に当たる．
 - **R7（型パスは `::`，`.` とは別系統）**: 型に紐づく名前 — enum variant（`Enum::Variant`，spec 0005）
-  および組み込み変換 `Char::from_code` / `String::from_char`（spec 0017）— は，ドット `.` ではなく
-  **二重コロン `::`** で書く型パスである．型パスは本節の `.` パス解決（R1〜R6）とは**構文的に分離**され，
-  互いに衝突しない．`::` の左辺は型名（enum 型・`Char`・`String`）であり，`Enum.Variant` は error とする．
+  — は，ドット `.` ではなく **二重コロン `::`** で書く型パスである．型パスは本節の `.` パス解決
+  （R1〜R6）とは**構文的に分離**され，互いに衝突しない．`::` の左辺は enum 型名であり，
+  `Enum.Variant` は error とする．
+  - かつて `::` で特別扱いしていた変換 `Char::from_code` / `String::from_char`（spec 0017）は，
+    spec 0021 で通常の intrinsic 関数 `char_from_code` / `string_from_char`（bare 名）へ移された．
+    したがって `::` は enum variant 専用であり，`Char::…` / `String::…` / `Array::…` の型パスは
+    もはや解決しない．
 - private（`pub` でない）関数は，importer から**修飾パスでは参照できない**（bare 名での
   既存の振る舞いは spec 0010 / 実装に従う．本仕様はこれを変更しない）．
 
