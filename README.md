@@ -94,3 +94,5 @@ Accepted になった仕様は非互換に書き換えず、古い仕様を supe
 - [0031: Stdlib Option Combinators](specs/0031-stdlib-option.md)
 - [0032: Packaging and Dependency Resolution](specs/0032-packaging.md)
 - [0033: Language Server](specs/0033-language-server.md)
+- [0034: Multiline Expressions and Trailing Commas](specs/0034-multiline-expressions-and-trailing-commas.md)
+- [0035: Canonical Formatting and Lint](specs/0035-canonical-formatting-and-lint.md)
