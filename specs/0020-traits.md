@@ -416,7 +416,8 @@ fn print_line<T: Show>(value: T) -> Unit uses { io } {
 - **trait object / 存在型**: `Array<dyn Show>`．辞書渡し / vtable を要するため本仕様は非対応とした．
 - **明示型引数と戻り値 `Self`**: turbofish 的な明示型引数（0014 Open Questions）を導入し，
   `fn zero() -> Self` や `fn parse(s: String) -> Self` のような戻り値のみ `Self` のメソッドを
-  解禁するか．
+  解禁するか．（→ 0047 が戻り値のみ `Self` を **期待型解決** で部分的に解禁済み．turbofish は引き続き
+  Open．）
 - **effect / error 多相と subsumption**: trait メソッドの `uses` / `throws` に row 変数を許すか
   （0008 / 0014 の effect-row 多相と連動）．impl 側が trait 宣言より小さい effect（`uses` の部分集合）
   や `throws Never` を持つことを許す subsumption を導入するか（本仕様は厳密一致とした）．
@@ -426,6 +427,7 @@ fn print_line<T: Show>(value: T) -> Unit uses { io } {
 - **分離コンパイル / パッケージ境界**: 呼び出し側の具体型が見えない境界で境界を discharge するための
   辞書渡しフォールバック．
 - **`?` 演算子の trait 化**: 0011 が予告した error の `From` / `Into` 変換を trait で表現するか．
-- **加法単位元**: 空配列の `sum` を全域にするための `Zero` / `Monoid` 相当の trait．
+- **加法単位元**: 空配列の `sum` を全域にするための `Zero` / `Monoid` 相当の trait（→ 0047 で `Monoid`
+  として解決）．
 - **算術 trait の標準セット拡充**: `Add` 以外の算術・比較 trait を標準ライブラリとしてどこまで
   提供するか．
