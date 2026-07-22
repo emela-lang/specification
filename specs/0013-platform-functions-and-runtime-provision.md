@@ -10,9 +10,10 @@ Status: Draft
 > 注（spec 0036）：platform ラッパー（`print` 等）は `effect` ブロック内に置かれ，`write_stdout`
 > 等はその effect の（非公開の）操作となる．canonical platform 名・capability 検証は本仕様のまま不変．
 
-> 注（spec 0043 / 0044 / 0046）：registry のエントリは `throws E` を宣言できる（0043）．§error との
+> 注（spec 0043 / 0044 / 0046 / 0050）：registry のエントリは `throws E` を宣言できる（0043）．§error との
 > 分離の「`Result` / `Option` を戻り値とする形で後続仕様において追加する」は，0043 が `throws` 採用で
-> 置き換える．エントリには `http.request`（0044）と `http.server_*`（0046）が加わる．
+> 置き換える．エントリには `http.request`（0044）と `socket.*`（0050）が加わる．`http.server_*`（0046 旧）は
+> 撤廃され，`HttpServer` は `Socket` 上の派生 effect（0049 / 0046 改訂）になった．
 
 ### Summary
 
@@ -127,7 +128,8 @@ fn main() -> Unit uses { io } {
 
 - **IR**: platform 関数の呼び出しは，通常の関数呼び出しとは区別された専用ノードとして typed IR に保持する（0012，effect 注釈を保つ）．
 - **JS backend**: backend が platform 関数の実体を提供する．既定ではランタイムオブジェクトを生成物に同梱する（例 `__rt["io.write_stdout"] = s => process.stdout.write(s)`）．ホストが実体を注入する形にしてもよい．
-- **WASM/WAMR backend**: platform 関数は WASI / host import に lower する．ユーザーには WASI を直接見せない (0016)．文字列はランタイム管理の linear memory 表現で受け渡す (0007, 0015)．生成モジュールが import するのは WASI の関数のみとし，未提供 capability はロード時にも解決不能となる．
+- **WASM backend（ターゲット別，0052）**: platform 関数は WASI インターフェース / host import に lower する．ユーザーには WASI を直接見せない (0016)．文字列はランタイム管理の linear memory 表現で受け渡す (0007, 0015)．ターゲットにより供給集合と import 形が異なる（0052）：`wasm-unknown` はホスト import を持たず標準 capability を供給しない（純コア）；`wasm-wasip2` は WASI 0.2 の component を出力し `wasi:sockets` / `wasi:cli` / `wasi:clocks` 等の標準インターフェースのみを import する（独自 import は用いない）．未提供 capability は build 時のカバレッジ検査で reject され，ロード時にも解決不能となる．
+- **WAMR backend**: native host import に lower し，embedder が実体を登録する（0026）．
 - **カバレッジ検査**: 各 backend は提供する platform 関数の集合を宣言し，コンパイラはプログラムの要求 ⊆ 提供 を検査する．
 
 ### Open Questions

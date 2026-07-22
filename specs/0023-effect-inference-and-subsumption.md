@@ -62,6 +62,16 @@ Status: Draft
 過大宣言された effect は manifest（0025）にも現れる: プログラムの要求集合は宣言 row ではなく，実際に
 到達する platform 関数から計算される（0013）ため，過大宣言が Runtime 要求を増やすことはない．
 
+### 派生 effect の discharge（0049）
+
+- 本仕様の推論・和集合・上界検査・subsumption が扱う row の要素は，プリミティブ effect と**派生 effect**
+  （0037/0049）の双方でありうる．これらの検査はこの **source row**（派生を含みうる）の上で従来どおり行う．
+- source row から，各派生 effect をその handler の依存 row で置換して **leaf row** を得る **discharge**
+  （0049 D2）は，推論の後段の変換である．manifest（0025）・0013 のカバレッジ検査・エントリ境界の全解決
+  検査（0049 D6）はいずれも leaf row に対して働く．
+- 未解決の派生 effect（handler が無い，0049 H6）は discharge されずに leaf row に residue として残り，
+  境界で 0049 D6 のエラーになる．
+
 ### Subsumption（部分集合による適合）
 
 具体 row `F1`, `F2` について `F1 ⊆ F2` のとき，
@@ -145,7 +155,8 @@ fn g() -> Unit uses { io, fs } {
   「和集合に加える」だけである．
 - subsumption は row の部分集合判定であり，実行時表現を持たない（0022 と同じく erase される）．
   coercion コードは生成されない．
-- typed IR（0012）には具体化・推論済みの row のみが現れる．
+- typed IR（0012）には具体化・推論済みの row のみが現れる．派生 effect は discharge 後 primitive leaf に
+  還元され，handler ともども IR には現れない（0049 D3）．
 
 ## Open Questions
 
@@ -153,3 +164,5 @@ fn g() -> Unit uses { io, fs } {
 - bounded row variable（`'e ⊆ { fs, net }` のような上界付き row 変数）の導入．
 - 過大宣言に対する lint の既定（警告 on/off）．
 - IDE / ツールが推論された row を inlay hint として表示する規約．
+- `pub fn` の `uses` も推論可能にし（progressive disclosure を pub 境界まで広げる），推論結果を
+  LSP・型チェックで提示するか（Track 4）．現状は `pub fn` は明示必須（本仕様）．

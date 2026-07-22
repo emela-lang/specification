@@ -211,16 +211,16 @@ fn exists(url: String) -> Bool throws HttpError uses { Http } {
 - **0025（Capability Manifest）**: capability `"Http"` / 修飾名 `http.request` が manifest に現れる．形式は不変．
 - **0026（Embedder-Defined Capabilities）**: `Http` は標準 capability であり `host.*` ではない．テストでの差し替え（mock）は 0026 の capability 差し替えで可能である．
 - **0032（Packaging）**: 0032 の例が想像した「`net, clock` を要求するサードパーティ http パッケージ」は，標準の監査可能な capability としての `Http` に置き換わる．
-- **0046（HTTP Server）**: 同じ `std.http` にサーバー側の effect `HttpServer` を追加する．`HttpError` のサーバー専用 variant は 0046 が使う．
+- **0046（HTTP Server）**: 同じ `std.http` にサーバー側の effect `HttpServer` を追加する（0046 改訂で `Socket`(0050) 上の**派生 effect**になった）．`HttpError` のサーバー関連 variant は 0046 が使う．client `Http` はプリミティブのまま据え置く（Open Questions の決定）．
 
 ### Open Questions
 
-- streaming（chunked な送受信）と `Bytes` 型の導入．導入後も `http.request` の「全量 `String`」意味論は保つか，新エントリを足すか．
+- streaming（chunked な送受信）．`Bytes` 型は 0051 で導入済み．body を `Bytes` にしてバイナリ body を扱う 0044 改訂を行うか（現状は「全量 `String`」意味論）．
 - タイムアウト・プロキシ等の設定面（`Request` のフィールドにするか，ホストポリシーに留めるか）．
 - `Method` に文字列の escape hatch（非標準メソッド）を許すか．
 - cookie・認証ヘルパー・URL パーサーを `std.http` に置くか，純 Emela の外部 Pome に置くか．
 - 同名ヘッダーの多値の扱い（結合か列挙か——現状は列挙）．
 - 要求・応答サイズの上限の既定値（`TooLarge` の閾値）．
-- 将来 `Net`（生ソケット）仕様が導入されても，`http.request` をゲスト側ソケット実装へ置き換えない（TLS・監査の理由が消えない）ことの明文化．
+- **`Http` は primitive 据え置き（決定・2026-07-22）**：`Socket`（0050）導入後も，client `Http`（`http.request`）はゲスト側ソケット実装へ置き換えず，TLS がホスト責務ゆえ **プリミティブ effect のまま**とする（0049 の派生 effect にしない）．サーバー（0046）は `Socket` 上の派生 effect へ移すが，client は移さない（TLS・監査の理由が消えないため）．
 - JSON エンコード / デコードの提供層．
 - effect handler が将来導入される場合（0000 の改訂を伴う別議論），`Http` 操作の handler による再解釈（テストのモック等）をどう位置づけるか．現行のモックは capability 差し替え（0026）で行う．
