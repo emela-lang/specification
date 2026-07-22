@@ -126,3 +126,7 @@ Accepted にする前に解くべき未解決事項。
 - [0046: HTTP Server — effect HttpServer と main ループ](specs/0046-http-server.md)
 - [0047: Monoid — combine と empty（戻り値位置 Self の解禁）](specs/0047-monoid.md)
 - [0048: ARC — WASM バックエンドの決定的参照カウント実行](specs/0048-arc-wasm.md)
+- [0049: Effects as Compile-Time Dependency Injection — 静的 handler](specs/0049-effects-as-compile-time-di.md)
+- [0050: Socket — wasi:sockets 上のプリミティブ effect](specs/0050-socket-primitive-effect.md)
+- [0051: Bytes — 不変のバイト列](specs/0051-bytes.md)
+- [0052: Backend Targets — wasm-unknown / wasm-wasip2 と platform 関数の供給差](specs/0052-backend-targets.md)

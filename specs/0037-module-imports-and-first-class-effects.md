@@ -57,7 +57,7 @@ effect Io {
 ```
 
 - `effect Name { items }` はモジュール内のトップレベルアイテムである．`Name` は大文字で始まらなければならない（MUST）．モジュール名との一致制約・1 ファイル 1 effect の制約（0036）は廃止し、1 モジュールに複数の effect を宣言してよい（MAY）．
-- `items` は `fn` / `pub fn` / `extern fn` を含んでよい（MAY）．各操作は暗黙に `uses { Name }` を持ち（MUST）、明示的な `uses` 節はエラー（MUST NOT）、`intrinsic` はエラー（MUST NOT、0021）——いずれも 0036 から不変．
+- `items` は `fn` / `pub fn` / `extern fn` を含んでよい（MAY）．**操作は自分の依存 effect を `uses` 節で宣言してよい**（0049 PE2b：インラインのデフォルト実装が他 effect を使える。例 `fn info(msg) uses { Io } { ... }`）——旧「暗黙 `uses { Name }`・明示 uses は禁止」を 0049 が緩和し 0036 Open Question 1 を解決する．`intrinsic` はエラー（MUST NOT、0021）．操作を**呼ぶ側**には effect 名 `Name` が寄与し（capability マーカー）、`Name` は discharge で操作の依存へ落ちる（0049 D1/D2）．
 - `extern fn` の canonical platform 名は従来どおり**モジュール名**で修飾する（例：`io.write_stdout`、0013）．effect 名 `Io` は `uses` row・呼び出し構文・診断にのみ現れ、backend シンボル・platform capability 検証には影響しない（MUST）．
 - extern バッキング操作は同じ effect ブロック内の操作からのみベア名で呼べる．ブロック外（同一モジュール内を含む）からは参照できない（MUST NOT）．`Name.extern_op(...)` の形の参照は「非公開操作」エラーとする（SHOULD、公開操作の列挙を案内してよい）．
 
@@ -138,4 +138,4 @@ fn main() -> Unit uses { Io } {
 1. **alias**：`import std.list as l`、および effect ベア名の衝突（2 つのモジュールが同名 effect を公開する場合）の回避手段．R4 の曖昧エラーで検出はできるが、回避は alias 導入まで full path 修飾のみ．
 2. **ドット付き effect 名（`host.*`）**：0036 Open Question 4 の続き．本仕様でも effect 名は単一識別子に限定する．
 3. **再 export・推移的 import**：モジュールが import したものを外へ見せる手段は未定義（現状どおり不可）．
-4. **ハンドラ**：`try`/`with` による操作の再解釈は引き続き範囲外（0036 Open Question 5）．
+4. **ハンドラ**：0049 が**静的 handler**（派生 effect の実装をコンパイル時に解決・使用箇所へ注入）を導入した．`try`/`with` による**実行時**再解釈（限定継続）は引き続き範囲外である．

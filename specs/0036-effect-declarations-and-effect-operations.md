@@ -2,7 +2,7 @@
 
 Status: Draft
 
-`effect` 宣言を導入し、effect を「操作（operation）の集合を所有する第一級の実体」として定義する仕様．効果を使う側は effect 単位で import し、`uses { io }` を宣言した関数スコープ内で、その操作を修飾形 `io.print(...)` で呼び出す．（Flix の effect に着想を得るが、本仕様の範囲にハンドラ（再解釈）は含めない．）
+`effect` 宣言を導入し、effect を「操作（operation）の集合を所有する第一級の実体」として定義する仕様．効果を使う側は effect 単位で import し、`uses { io }` を宣言した関数スコープ内で、その操作を修飾形 `io.print(...)` で呼び出す．（Flix の effect に着想を得るが、本仕様の範囲にハンドラ（再解釈）は含めない——派生 effect の**静的 handler** は後続 0049 が導入する．）
 
 ### Summary
 
@@ -12,7 +12,7 @@ Status: Draft
 - `import std.Name` は effect を丸ごと import する．その公開操作は **修飾形 `Name.op(...)` でのみ** 呼べる．ベア名 `op(...)` で effect 操作を呼ぶことはコンパイルエラーである．
 - effect 操作の関数単位 import（`import std.Name.op`）は拒否する．
 - `Name.op(...)` の呼び出しは、呼び出し元の推論 effect row に `Name` を寄与する．ゲートは既存の subset 規則（0023）が行う．
-- 本バージョンにハンドラ（`try`/`with` による再解釈）は無い．操作の実体は 0013 の platform 関数 / extern が供給する．`effect` 構文は将来のハンドラの土台とする．
+- 本バージョンにハンドラ（`try`/`with` による再解釈）は無い．操作の実体は 0013 の platform 関数 / extern が供給する．`effect` 構文は将来のハンドラの土台とする（0049 が派生 effect の**静的 handler** として実現する）．
 
 ### Motivation
 
@@ -120,8 +120,8 @@ fn main() -> Unit {
 
 ### Open Questions
 
-1. **操作が追加の effect を宣言できるか**：本バージョンでは操作の effect row は厳密に `{ Name }`．`clock` も使う `io` 操作のような場合をどう扱うかは将来課題．
+1. **操作が追加の effect を宣言できるか**：→ **0049 が解決**．操作は `uses` で自分の依存 effect（`Io`・`Socket` 等）を宣言でき、それが discharge の対象になる（インラインデフォルト、0049 PE2b）。呼ぶ側には effect 名が寄与し、discharge で依存へ落ちる（0049 D1/D2）．
 2. **同一ファイル内 effect の修飾呼び出し**：import されていない同一ファイルの effect 操作は、修飾子を持たないためベア名で呼ぶ．import された場合との一貫性（常に修飾必須にするか）は将来検討．
 3. **未知 effect 名の検証**：`uses { X }` の `X` が既知（組み込み ∪ 宣言済み effect）でない場合の警告は、embedder-defined capability（0026）や `host.*` との兼ね合いから本バージョンでは導入しない（誤検出回避）．将来、closed set が定まった段階で lint 化を検討．
 4. **`host.*` 等のドット付き effect 名**：本バージョンは effect 名を単一識別子に限定し、`host.*` は先送りする．
-5. **ハンドラ**：`try`/`with` による操作の再解釈（代数的 effect ハンドラ）は本仕様の範囲外．`effect` 構文はその土台として設計されている．
+5. **ハンドラ**：0049 が**静的 handler**（派生 effect の実装をコンパイル時に解決・注入）を導入した．`try`/`with` による**実行時**再解釈（代数的 effect ハンドラ／限定継続）は引き続き範囲外である．
