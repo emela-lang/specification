@@ -7,6 +7,11 @@
 - 各エントリは、変更した章と、対応する [RFC（`specs/`）](../specs/) を示す。
 - 詳細な経緯・却下案・動機は RFC 側にある。ここは索引である。
 
+## 2026-07-23
+
+- **[Effects](effects.md)** §2 / §6 / §7: effect-row 変数の記法を変更。sigil `'` 付き・暗黙全称量化（`uses 'e`）を廃し、小文字始まりの識別子を関数の `<...>` に明示宣言する **row パラメータ**（`fn map<T, U, e>`、bare 形 `uses e` / 拡張形 `uses { Io, ..e }`）とした。subsumption を tail 込みの成分ごと包含（`C1 ⊆ C2 ∧ T1 ⊆ T2`）へ拡張し、「v1 は具体 row 同士のみ」の制限を撤廃。row 拡張の最小解を tail 付き実引数へ一般化（`e = (A \ D) ∪ Ta`）。（`specs/0022` / `0023` 改訂）
+- **[Generics](generics.md)** §1 / §4: 型パラメータの大文字始まりを MUST 化（小文字始まりは row パラメータ）。（`specs/0014` / `0022` 改訂）
+
 ## 2026-07-22
 
 - **基礎5章を新設**。[Values & Types](values.md)（`specs/0001` / `0007` / `0016` / `0017` / `0051`）、[Bindings & Functions](functions.md)（`specs/0002` / `0003` / `0045`）、[Expressions & Control Flow](expressions.md)（`specs/0004` / `0015` / `0027` / `0019`）、[Data Types](data-types.md)（`specs/0005` / `0006` / `0028` / `0042`）、[Generics](generics.md)（`specs/0014`）。
