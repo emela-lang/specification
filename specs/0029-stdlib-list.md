@@ -12,7 +12,7 @@ Status: Draft
   ない．
 - 要素数が実行時に決まる列・先頭への追加・再帰的な分解は `List<T>`，要素数固定・添字アクセスは
   `Array<T>`（0007）と使い分ける．
-- コア関数は effect-row 多相（`'e`）で宣言し，純粋にも effectful にも同一定義で使える．
+- コア関数は effect-row 多相（row パラメータ `e`，0022）で宣言し，純粋にも effectful にも同一定義で使える．
 - すべて純粋 Emela で実装可能である（intrinsic / platform 関数を要しない）．
 
 ## Motivation
@@ -56,17 +56,20 @@ pub fn reverse<T>(xs: List<T>) -> List<T> uses {}
 
 pub fn append<T>(xs: List<T>, ys: List<T>) -> List<T> uses {}
 
-pub fn map<T, U>(xs: List<T>, f: (T) -> U uses 'e) -> List<U> uses 'e
-pub fn filter<T>(xs: List<T>, pred: (T) -> Bool uses 'e) -> List<T> uses 'e
-pub fn fold<T, A>(xs: List<T>, init: A, f: (A, T) -> A uses 'e) -> A uses 'e
+pub fn map<T, U, e>(xs: List<T>, f: (T) -> U uses e) -> List<U> uses e
+pub fn filter<T, e>(xs: List<T>, pred: (T) -> Bool uses e) -> List<T> uses e
+pub fn fold<T, A, e>(xs: List<T>, init: A, f: (A, T) -> A uses e) -> A uses e
+pub fn each<T, e>(xs: List<T>, f: (T) -> Unit uses e) -> Unit uses e
 
 pub fn from_array<T>(xs: Array<T>) -> List<T> uses {}
 pub fn to_array<T>(xs: List<T>) -> Array<T> uses {}
 ```
 
-- `map` / `filter` / `fold` の関数引数は effect-row 変数 `'e` を取り（0022），結果の effect は渡された
-  関数の effect になる．
+- `map` / `filter` / `fold` / `each` の関数引数は effect-row 変数 `e` を取り（0022），結果の effect は
+  渡された関数の effect になる．
 - `fold` は左畳み込み（先頭から順に `f(acc, x)`）である (MUST)．評価順は列の順で決定的である．
+- `each` は各要素に `f` を先頭から順に適用し `Unit` を返す (MUST)．effectful な走査
+  （`Io.print` 等）のための関数であり，順序は列の順で決定的である．
 - `head` / `tail` は空リストで `None` を返す．panic する変種は提供しない（0011: 不在は `Option`）．
 - 順序保存: `map` / `filter` は入力の順序を保つ (MUST)．
 
@@ -82,7 +85,7 @@ impl<T> Monoid for List<T> {
 }
 
 pub fn concat<M: Monoid>(xs: List<M>) -> M uses {}
-pub fn fold_map<T, M: Monoid>(xs: List<T>, f: (T) -> M uses 'e) -> M uses 'e
+pub fn fold_map<T, M: Monoid, e>(xs: List<T>, f: (T) -> M uses e) -> M uses e
 ```
 
 - `combine` は `append`（結合的），`empty` は `Nil`（単位元）である．`empty` は戻り値位置にのみ `Self`
@@ -93,9 +96,11 @@ pub fn fold_map<T, M: Monoid>(xs: List<T>, f: (T) -> M uses 'e) -> M uses 'e
   `M = List<T>` のとき `concat: List<List<T>> -> List<T>`（リストの平坦連結）になる (MUST)．
 - `fold_map` は各要素を `f` で `M` に写してから畳む（`foldMap` 相当）．`fold_map(xs, f)` は
   `concat(map(xs, f))` と観測同値でなければならない (MUST)．
-- `fold_map` の関数引数は effect-row 多相（`'e`，0022）で，結果 effect は `f` の effect になる
+- `fold_map` の関数引数は effect-row 多相（`e`，0022）で，結果 effect は `f` の effect になる
   （`map` / `filter` / `fold` と同様）．`concat` は追加の関数引数を持たず，`Monoid.combine` /
-  `Monoid.empty` は `uses {}`（0047）なので `concat` は純粋である．
+  `Monoid.empty` は `uses {}`（0047）なので `concat` は純粋である（関数引数を取らないため
+  row パラメータも持たない —— 0022 の「各 row パラメータは少なくとも 1 つのパラメータの `uses` に
+  現れる」規則）．
 - 本 instance と 2 関数は，コンテナを固定した（`List` 専用の）Monoid 畳み込みである．任意のコンテナを
   抽象する `Foldable`（HKT を要する）は本仕様の範囲外とし，コンテナごとに個別提供する（0000 非目標）．
 
@@ -127,7 +132,7 @@ fn main() -> Int {
 再帰による定義（`map` の参照実装）:
 
 ```emela
-pub fn map<T, U>(xs: List<T>, f: (T) -> U uses 'e) -> List<U> uses 'e {
+pub fn map<T, U, e>(xs: List<T>, f: (T) -> U uses e) -> List<U> uses e {
     match xs {
         Nil -> Nil
         Cons(h, t) -> Cons(f(h), map(t, f))

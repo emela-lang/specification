@@ -12,7 +12,7 @@ Status: Draft
 - `std.option` は `Option<T>` の標準コンビネータを提供する．すべて純粋 Emela（`match`）で実装可能．
 - `ok_or` は不在 (`None`) を error channel（`throws`, 0011）へ**明示的に**橋渡しする唯一の標準手段で
   ある．
-- 関数を取るコンビネータは effect-row 多相（`'e`, 0022）で宣言する．
+- 関数を取るコンビネータは effect-row 多相（row パラメータ `e`, 0022）で宣言する．
 
 ## Motivation
 
@@ -28,9 +28,9 @@ Status: Draft
 ```emela
 module option
 
-pub fn map<T, U>(o: Option<T>, f: (T) -> U uses 'e) -> Option<U> uses 'e
+pub fn map<T, U, e>(o: Option<T>, f: (T) -> U uses e) -> Option<U> uses e
 
-pub fn and_then<T, U>(o: Option<T>, f: (T) -> Option<U> uses 'e) -> Option<U> uses 'e
+pub fn and_then<T, U, e>(o: Option<T>, f: (T) -> Option<U> uses e) -> Option<U> uses e
 
 pub fn unwrap_or<T>(o: Option<T>, default: T) -> T uses {}
 
@@ -63,7 +63,7 @@ pub fn is_none<T>(o: Option<T>) -> Bool uses {}
 参照実装:
 
 ```emela
-pub fn map<T, U>(o: Option<T>, f: (T) -> U uses 'e) -> Option<U> uses 'e {
+pub fn map<T, U, e>(o: Option<T>, f: (T) -> U uses e) -> Option<U> uses e {
     match o {
         Some(v) -> Some(f(v))
         None -> None
@@ -113,7 +113,7 @@ fn require_profile(user: User) -> Profile throws NotFound {
 
 ## Open Questions
 
-- `unwrap_or_else<T>(o, f: () -> T uses 'e)`（既定値の遅延評価版）等の拡充．
+- `unwrap_or_else<T, e>(o, f: () -> T uses e)`（既定値の遅延評価版）等の拡充．
 - `Option<Option<T>>` の `flatten`．
 - `to_list` / `to_array` などコレクションとの相互変換（0029 と連動）．
 - `Eq` のパラメータ付き instance（`impl<T: Eq> Eq for Option<T>`, 0020）を stdlib で提供するか

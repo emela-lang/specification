@@ -67,10 +67,10 @@ fn make_adder(n: Int) -> ((Int) -> Int uses {}) uses {} {
 
 - `uses {}`（純粋）は省略してよい。`(Int) -> Int uses {}` と `(Int) -> Int` は等価である。
 - `throws` / `uses` は型の一部であり、これらの異なる関数型は異なる型である。ただし effect row の[部分集合方向の適合（subsumption）](effects.md#6-subsumption-と-row-拡張)は許される。
-- effect-row を型変数で受ける総称版は [effect-row 多相](effects.md#7-effect-row-多相)、型パラメータ付きの関数は [Generics](generics.md) が定める。
+- effect-row を row 変数で受ける総称版は [effect-row 多相](effects.md#7-effect-row-多相)、型パラメータ付きの関数は [Generics](generics.md) が定める。
 
 ```emela
-fn apply<T>(x: T, f: (T) -> T uses 'e) -> T uses 'e { f(x) }
+fn apply<T, e>(x: T, f: (T) -> T uses e) -> T uses e { f(x) }
 ```
 
 ## 5. 自己末尾呼び出し
