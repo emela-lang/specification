@@ -130,7 +130,7 @@ fn main() -> Unit uses { Io } {
 - **0036（Effect Declarations）**：effect ブロック・暗黙 uses・修飾必須・操作の個別 import 不可の骨子を引き継ぎ、effect == module（小文字名）を廃止する．0036 の Open Question 2（ローカル effect の修飾）・3（uses の未知名検証）は本仕様で解決する．
 - **0009 / 0013 / 0025**：組み込み effect 名は `Io`・`Clock` に改める．platform 関数の canonical 名（`io.write_stdout` 等）とその capability 検証（0013）は不変．capability manifest（0025）が列挙する effect 名は大文字表記に追従する．
 - **0026（Embedder-Defined Capabilities）**：embedder 定義 effect は `effect Db { ... }` の形で型と同じ命名規約に統一される．`uses` の未知名検証（本仕様）との整合は「embedder が effect 宣言を含むモジュールを提供し、利用側がそれを import する」ことで取る．
-- **0022 / 0023**：row の要素名が大文字になる以外は不変．
+- **0022 / 0023**：row の**具体要素名**が大文字になる以外は不変．row 変数 tail（0022 改訂後の `..e`）は小文字始まりの識別子のままであり，本仕様の effect 名（大文字）と字句的に区別される．
 - **0006 / receiver 呼び出し**：`x.y` の解決順位は R6 が定める（ローカル束縛が最優先）．
 
 ### Open Questions

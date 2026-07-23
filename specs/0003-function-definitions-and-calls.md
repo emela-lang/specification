@@ -262,13 +262,13 @@ fn applyFs(
 }
 ```
 
-より一般化するなら effect row に対するジェネリクスが必要になる．これは spec 0022 (Effect-Row Polymorphism) で定義する（effect-row 変数は sigil `'` を付け，型パラメータ `<>` とは別カテゴリとする）．
+より一般化するなら effect row に対するジェネリクスが必要になる．これは spec 0022 (Effect-Row Polymorphism) で定義する（effect-row 変数は小文字始まりの識別子で，型パラメータと同じ `<...>` に宣言する）．
 
 ```emela
-fn apply<T>(
+fn apply<T, e>(
     x: T,
-    f: (T) -> T uses 'e
-) -> T uses 'e {
+    f: (T) -> T uses e
+) -> T uses e {
     f(x)
 }
 ```
