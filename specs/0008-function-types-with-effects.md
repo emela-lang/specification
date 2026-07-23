@@ -59,20 +59,21 @@ Path -> String throws IoError uses { fs }
 
 ### 高階関数における Effect 型
 
-effect row は effect-row 変数 `'e`（sigil `'` 付き）で受け取り，伝播できる．effect-row 変数は型
-パラメータ `<>` とは別カテゴリで，`<>` には書かない．意味論は spec 0022 (Effect-Row Polymorphism) で
-定義する．
+effect row は **effect-row 変数**（row パラメータ）で受け取り，伝播できる．row パラメータは sigil の
+ない小文字始まりの識別子で，型パラメータと同じ `<...>` に宣言する（`<...>` 内は先頭文字の大小で
+型パラメータと振り分ける）．意味論は spec 0022 (Effect-Row Polymorphism) で定義する．
 
 ```emela
-fn map<T, U>(
+fn map<T, U, e>(
   xs: Array<T>,
-  f: (T) -> U uses 'e
-) -> Array<U> uses 'e
+  f: (T) -> U uses e
+) -> Array<U> uses e
 ```
 
 `throws` についても，error 型を型変数として受け取り，伝播させることができる．ここで `E` は通常の型
 パラメータ（0014）である．`throws` は単一の error 型を取る（0011）ため，これは effect-row 変数ではなく
-型変数であり，spec 0022 ではなく 0014 の対象である．
+型変数であり，spec 0022 ではなく 0014 の対象である．両者は同じ `<...>` に同居する（`E` は大文字 = 型，
+`e` は小文字 = row）．
 
 ```emela
 fn mapThrows<T, U, E>(

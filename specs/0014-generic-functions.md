@@ -18,9 +18,9 @@ Status: Draft
 
 ジェネリック関数の構文は既にいくつかの仕様で前方参照されている．
 
-- 0008 は高階関数の例として `fn map<T, U>(xs: Array<T>, f: (T) -> U uses 'e) -> Array<U> uses 'e` を示す．
+- 0008 は高階関数の例として `fn map<T, U, e>(xs: Array<T>, f: (T) -> U uses e) -> Array<U> uses e` を示す．
 - 0011 は `fn head<T>(xs: Array<T>) -> T` を `panic` の例で用いる．
-- 0003 / 0008 は effect row に対するジェネリクス（`fn apply<T>(..., uses 'e)` / `fn map<T, U>(..., uses 'e)`）を予告する（effect-row 多相は spec 0022 で定義する）．
+- 0003 / 0008 は effect row に対するジェネリクス（`fn apply<T, e>(..., uses e)` / `fn map<T, U, e>(..., uses e)`）を予告する（effect-row 多相は spec 0022 で定義する）．
 
 本仕様はこのうち **型パラメータ** を正式に定義する．effect row に対するジェネリクス（effect-row 多相）は spec 0022 (Effect-Row Polymorphism) で定義する．error 型に対する行多相（union error）は将来仕様に送る (Open Questions)．
 
@@ -37,7 +37,9 @@ fn identity<T>(x: T) -> T uses {} {
 ```
 
 - 型パラメータは 1 つ以上をカンマ区切りで並べる: `<T>`, `<T, U>`．
-- 型パラメータ名は型の位置に書ける識別子であり，慣習として大文字で始める．
+- 型パラメータ名は型の位置に書ける識別子であり，**大文字で始めなければならない** (MUST)．
+  `<...>` 内の小文字始まりの識別子は effect-row パラメータ（spec 0022）として扱われる（先頭文字の
+  大小で振り分ける）．
 - `< >`（空のリスト）は書けない．型パラメータを持たない関数は `< >` を省略する（従来通り）．
 
 宣言された型パラメータは，そのシグネチャ（引数型・戻り値型・`throws` 型）と関数本体の中で **型** として使える．スコープはその関数定義に閉じる．異なる関数の同名型パラメータは無関係である．
@@ -110,7 +112,7 @@ fn pick<T>() -> T uses {}      -- error: `T` does not appear in any parameter ty
 
 #### effect と throws
 
-ジェネリック関数も，具体的な effect row (`uses`) と error 型 (`throws`) を宣言できる（省略は従来通り）．**effect row を型変数にする多相（effect-row polymorphism）は spec 0022 で定義する**（例 `fn map<T, U>(xs, f: (T) -> U uses 'e) -> Array<U> uses 'e`．row 変数は sigil `'` 付きで `<>` の外）．error 型に対する行多相（union error）は本仕様では扱わない．
+ジェネリック関数も，具体的な effect row (`uses`) と error 型 (`throws`) を宣言できる（省略は従来通り）．**effect row を row 変数にする多相（effect-row polymorphism）は spec 0022 で定義する**（例 `fn map<T, U, e>(xs, f: (T) -> U uses e) -> Array<U> uses e`．row パラメータは小文字始まりの識別子として型パラメータと同じ `<...>` に宣言する）．error 型に対する行多相（union error）は本仕様では扱わない．
 
 なお，`throws E` の `E` に通常の型パラメータを用いること（単一の error 型を総称する）は本仕様の範囲であり，有効である（`throws` は単一の型を取る，0011）．
 
@@ -171,7 +173,7 @@ fn first<T>(xs: Array<T>) -> Option<T> uses {} {
 ### Open Questions
 
 - 明示的な型引数構文（`identity<Int>(x)` 相当）を導入するか．比較演算子 `<` との構文的曖昧性をどう解決するか（turbofish 的構文など）．
-- error 型に対する行多相（union error / `throws` の行変数）の導入．effect-row 多相 (`uses 'e`) は spec 0022 で定義済み．
+- error 型に対する行多相（union error / `throws` の行変数）の導入．effect-row 多相 (`uses e`) は spec 0022 で定義済み．
 - いずれのパラメータ型にも現れない型パラメータ（`pick<T>() -> T` のような戻り値専用の型パラメータ）を，明示的型引数の導入とあわせて許可するか．
 - ジェネリックなデータ型宣言（ユーザー定義のジェネリック enum / record，0005 の `enum Either<L, R>`）．→ spec 0028 (Generic Data Type Declarations) で実現する．
 - ジェネリック関数を第一級の値として扱う手段．

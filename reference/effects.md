@@ -46,8 +46,9 @@ effect は capability の **追跡と、境界での供給** である。派生 
 FnType  ::= '(' [Type (',' Type)*] ')' '->' Type Throws? Uses?
 Throws  ::= 'throws' Type
 Uses    ::= 'uses' Row
-Row     ::= '{' [Name (',' Name)*] ('..' RowVar)? '}'  |  RowVar
-RowVar  ::= "'" ident
+Row     ::= '{' [RowElem (',' RowElem)*] '}'  |  RowVar
+RowElem ::= Name  |  '..' RowVar
+RowVar  ::= ident    -- 小文字始まり。関数の `<...>` で宣言した row パラメータ（§7）
 ```
 
 - **関数型の表記** で `uses` を省略した型は `uses {}`（純粋）である (MUST)。型は明示的な契約であり、推論されない。`uses {}` は省略してよい。
@@ -166,40 +167,51 @@ twice(pure_inc)                          -- OK: {} ⊆ { Fs, Net }
 
 subsumption は同一性ではなく **適合**（部分型方向の変換）である。「`uses` の異なる関数型は異なる型」は維持される。適合は実行時表現を持たず、coercion コードは生成されない。
 
+row 変数（§7）を含む row の包含は、具体部と tail 集合を **成分ごと** に判定する (MUST)。
+
+```text
+{ C1, ..T1 } ⊆ { C2, ..T2 }   ⟺   C1 ⊆ C2  かつ  T1 ⊆ T2
+```
+
+row 変数は全称量化されている（あらゆる具体化で包含が成り立つ必要がある）ため、この規則は健全かつ完全である。tail を通した **緩和**（bounded row variable）は導入しない（→ 未解決事項）。
+
 ### Row 拡張
 
 ```text
-uses { Io, ..'e }     -- 意味: { Io } ∪ 'e
+uses { Io, ..e }     -- 意味: { Io } ∪ e
 ```
 
-具体 effect と row 変数を並べた拡張 row を書ける。単一化は **最小解** を取る。具体 row `C` を `{ Io, ..'e }` に対応付けるとき `'e = C \ { Io }` とする (MUST)。
+具体 effect と row 変数（`..e`）を並べた拡張 row を書ける。単一化は **最小解** を取る。実引数の row `(A, tail Ta)` を `{ D, ..e }` に対応付けるとき `e = (A \ D) ∪ Ta` とする (MUST)。実引数が具体 row `C`（tail なし）なら従来どおり `e = C \ D` である。
 
 ```emela
-fn traced<T, U>(x: T, f: (T) -> U uses 'e) -> U uses { Log, ..'e } {
+fn traced<T, U, e>(x: T, f: (T) -> U uses e) -> U uses { Log, ..e } {
     Log.info("call")     -- uses { Log }
-    f(x)                 -- uses 'e
+    f(x)                 -- uses e
 }
 ```
 
 ## 7. effect-row 多相
 
-`map` / `filter` / `fold` のような高階関数を、純粋・effectful の両方に同一定義で適用するため、`uses` を **effect-row 変数** で受け取れる。
+`map` / `filter` / `fold` のような高階関数を、純粋・effectful の両方に同一定義で適用するため、`uses` を **effect-row 変数**（row パラメータ）で受け取れる。
 
 ```emela
-fn map<T, U>(xs: Array<T>, f: (T) -> U uses 'e) -> Array<U> uses 'e { ... }
+fn map<T, U, e>(xs: Array<T>, f: (T) -> U uses e) -> Array<U> uses e { ... }
 
-map([1, 2, 3], fn (x: Int) -> Int { x + 1 })      -- 'e = {} → map 全体 uses {}
-map(paths, fn (p: Path) -> String uses { Fs } { Fs.read(p) })  -- 'e = { Fs }
+map([1, 2, 3], fn (x: Int) -> Int { x + 1 })      -- e = {} → map 全体 uses {}
+map(paths, fn (p: Path) -> String uses { Fs } { Fs.read(p) })  -- e = { Fs }
 ```
 
-- effect-row 変数は sigil `'` を付けた識別子（`'e`）で書く。**型パラメータ `<...>` とは別カテゴリ** であり、`<...>` に書いてはならない (MUST NOT)。
-- `'e` は **`uses` の位置にのみ** 現れる (MUST)。引数型・戻り値型・`throws` 型には書けない。
-- `'e` は宣言不要で、`uses` 位置に現れた時点でシグネチャに暗黙に全称量化される。スコープはその関数定義に閉じ、異なる関数の同名 `'e` は無関係である。
-- 各 effect-row 変数は、少なくとも1つのパラメータの `uses` 位置に現れなければならない (MUST)。どの `uses` 位置にも現れない row 変数は推論できずエラーである。
-- 呼び出し時、`'e` は実引数の関数値の effect row から推論する。呼び出し式全体の effect row は、代入を関数自身の `uses` 節へ適用したものになる。
-- effect row は静的契約で実行時表現を持たないため、effect-row 多相は **単相化を必要としない**。型検査後に消去するだけでよく、`'e` の違いだけで別の特殊化を生まない。
+- row パラメータは **sigil のない小文字始まりの識別子**（`e`, `e1`）で書き、型パラメータと同じ `<...>` に **明示宣言** する (MUST)。`<...>` 内は先頭文字で振り分ける：**大文字始まりは型パラメータ、小文字始まりは row パラメータ**。型パラメータは大文字で始まらなければならない (MUST)。
+- row パラメータを宣言できるのは **名前付き `fn` 定義** のみである。enum / record / trait の `<...>` には書けない (MUST NOT)。trait 境界も付けられない (MUST NOT)。
+- row 変数は **`uses` の位置にのみ** 現れる (MUST)。引数型・戻り値型・`throws` 型には書けない。`uses` 位置の row 変数は `<...>` で宣言済みでなければならず (MUST)、未宣言はエラーである。スコープはその関数定義（本体内の無名関数を含む）に閉じ、異なる関数の同名 row パラメータは無関係である。
+- `uses` 節は **bare 形** `uses e`（`uses { ..e }` と等価）と **拡張形** `uses { Io, ..e }`（§6 Row 拡張）で書ける。パラメータの関数型の `uses` に書ける tail は最大1個 (MUST)。当該関数自身の `uses` には複数の tail を書いてよく (MAY)、`uses { ..e1, ..e2 }` は `e1 ∪ e2` を意味する。
+- row 変数を書ける位置は、パラメータの（直接の）関数型の `uses`、当該関数自身の `uses`、本体内の無名関数の `uses`（囲む関数の row パラメータの参照）である。戻り値型の中や、パラメータの関数型のさらに内側の関数型の `uses` には書けない (MUST NOT)。
+- 各 row パラメータは、少なくとも1つのパラメータの `uses` 位置に現れなければならない (MUST)。どの `uses` 位置にも現れない row パラメータは推論できずエラーである。
+- 呼び出し時、`e` は実引数の関数値の effect row から **最小解** で推論する（§6 Row 拡張）。同一 row 変数が複数のパラメータに現れる場合は各実引数からの残差の **和** に束縛する (MUST)。呼び出し式全体の effect row は、代入を関数自身の `uses` 節へ適用したものになる。
+- effect 操作の直接呼び出し（`Io.print` 等）に対する `uses` ゲート（§4）は宣言 row の **具体部** に対してのみ働く。tail は `e = {}` に具体化されうるため、操作呼び出しの免許にならない。
+- effect row は静的契約で実行時表現を持たないため、effect-row 多相は **単相化を必要としない**。型検査後に消去するだけでよく、`e` の違いだけで別の特殊化を生まない。
 
-subsumption（§6）は v1 では **具体 row 同士の適合にのみ** 適用し、row 変数を通した緩和（bounded row variable）はしない (MUST)。
+row 変数を含む row 同士の適合（subsumption）は §6 の成分ごと包含に従う。
 
 ## 8. handler・discharge・erasure
 
@@ -289,10 +301,11 @@ fn main() -> Unit uses { Log } {
 - **スコープ限定の handler 差し替え（DI の本体）と coherence**。default（同一モジュール）と異なる handler の注入（テスト用モック、呼び出しグラフ全体への handler スレッディング）、同一 effect に複数 handler が現れる場合の大域一意性。
 - **状態を持つ handler**（コネクションプール等）を erasure と両立させる方法。
 - **mixed effect**（同一 effect が一部 extern・一部 handler）の是非（当面禁止）。
-- **bounded row variable**（`'e ⊆ { Fs, Net }`）と、row 変数を通した subsumption。
-- **error-row 多相**（`throws { A, ..'r }`）の導入可否（→ [Errors](errors.md)）。
+- **bounded row variable**（`e ⊆ { Fs, Net }`）による、tail を通した緩和。
+- **error-row 多相**（`throws { A, ..r }`）の導入可否（→ [Errors](errors.md)）。
 - **`throws` の推論**（private 関数で本体から推論する）。
-- **無名関数が effect-row 多相を持てるか**。
+- **無名関数が自身の row パラメータを量化できるか**（囲む関数の row パラメータの参照は §7 で許可済み）。
+- **trait メソッド・effect operation・`extern fn` の row 多相**。
 
 ## Provenance
 

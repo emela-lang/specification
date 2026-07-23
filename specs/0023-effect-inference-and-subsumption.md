@@ -3,8 +3,11 @@
 Status: Draft
 
 関数定義の `uses` 節の **推論**，注釈の意味（上界検査），row の部分集合による適合（**subsumption**），
-および **row 拡張** `uses { io, ..'e }` を定義する仕様．0009（Effect Semantics）と 0022
+および **row 拡張** `uses { Io, ..e }` を定義する仕様．0009（Effect Semantics）と 0022
 （Effect-Row Polymorphism）を拡張し，0010 の lint を規範へ格上げする．
+
+2026-07-23 改訂: 0022 の改訂（row 変数の `<...>` 明示宣言・sigil 廃止）に追随し，row 拡張の構文を
+`..'e` から `..e` へ変更，subsumption を tail 込みの成分ごと包含へ拡張した．
 
 ## Summary
 
@@ -15,8 +18,8 @@ Status: Draft
   合法（将来予約に使える）．
 - **Subsumption**: 具体 row `F1 ⊆ F2` のとき，`(A) -> T uses F1` の関数値は `(A) -> T uses F2` が
   期待される位置に適合する (MUST)．
-- **Row 拡張**: `uses { io, ..'e }` は「`io` に加えて `'e` の内容」を表す．0022 の第一段階制限
-  （具体 row か単一変数のみ）を緩和する．
+- **Row 拡張**: `uses { Io, ..e }` は「`Io` に加えて row 変数 `e` の内容」を表す．0022 の第一段階
+  制限（具体 row か単一変数のみ）を緩和する．
 
 ## Motivation
 
@@ -42,6 +45,9 @@ Status: Draft
 - 再帰・相互再帰は最小不動点で解く: 各関数の row を `{}` から始め，変化がなくなるまで和集合を反復する．
   effect の全体集合は有限（0009 + 0026）なので停止する．
 - effect-row 多相な関数（0022）の呼び出しは，row 変数を実引数から具体化した後の row を合成に用いる．
+  呼び出し元自身が row 多相なら，合成される row に呼び出し元の row 変数が tail として現れてよい．
+- 推論が row 変数を**導入する**ことはない (MUST NOT)．effect-row 多相は `<...>` への明示宣言に
+  よるオプトインのみである（0022）．推論はシグネチャに書かれた row 変数を伝播するだけである．
 - 無名関数も同様に推論する．`uses` を明示した無名関数は下記の上界検査に従う．
 
 ### pub 境界の明示
@@ -92,32 +98,45 @@ twice(pure_inc)    -- OK: {} ⊆ { fs, net }
 0003 の「`uses` の異なる関数型は異なる型」は維持される．subsumption は同一性ではなく**適合**
 （部分型方向の変換）である．
 
-### Row 変数との関係
+### Row 変数との関係（tail 込みの包含）
 
-- `uses 'e` に対する一致は 0022 の単一化に従う．v1 では **subsumption は具体 row 同士の適合にのみ**
-  適用し，row 変数を通した緩和（bounded row variable）はしない (MUST)．
-- row 変数の単一化は最小解を取る（下記 row 拡張参照）．
+row 変数（0022）を含む row の包含は，具体部と tail 集合を **成分ごと** に判定する (MUST)．
+row `{ C1, ..T1 }`（具体部 `C1`，tail の集合 `T1`）と `{ C2, ..T2 }` について
+
+```text
+{ C1, ..T1 } ⊆ { C2, ..T2 }   ⟺   C1 ⊆ C2  かつ  T1 ⊆ T2
+```
+
+row 変数は全称量化されている（あらゆる具体化で包含が成り立つ必要がある）ため，この規則は健全かつ
+完全である: 全 tail を `{}` に具体化すれば `C1 ⊆ C2` が必要であり，`T1 ⊄ T2` なら余分な tail に
+fresh な effect を与えることで反例が作れる．
+
+- `uses e` に対する一致は 0022 の単一化に従い，最小解を取る（下記 row 拡張参照）．
+- tail を通した**緩和**（bounded row variable，`e ⊆ { Fs, Net }` のような上界制約）は引き続き
+  導入しない（Open Questions）．上の規則は同名 tail の共有を要求する包含であり，緩和ではない．
 
 ### Row 拡張
 
-`uses` 節に，具体 effect と row 変数を並べた **拡張 row** を書ける．
+`uses` 節に，具体 effect と row 変数（`..e`）を並べた **拡張 row** を書ける．
 
 ```text
-uses { io, ..'e }
+uses { Io, ..e }
 ```
 
-- 意味は集合の和 `{ io } ∪ 'e` である．`'e` が `{ io, fs }` に具体化されれば全体は `{ io, fs }`
+- 意味は集合の和 `{ Io } ∪ e` である．`e` が `{ Io, Fs }` に具体化されれば全体は `{ Io, Fs }`
   （重複は正規化される）．
-- 出現位置は 0022 と同じ（パラメータの関数型の `uses`，当該関数自身の `uses`）．
-- 単一化は**最小解**を取る: 具体 row `C` を拡張 row `{ io, ..'e }` に対応付けるとき，`'e = C \ { io }`
-  とする (MUST)．
+- 出現位置は 0022 と同じ（パラメータの関数型の `uses`，当該関数自身の `uses`）．パラメータの
+  関数型の `uses` に書ける tail は最大 1 個，当該関数自身の `uses` には複数書いてよい（0022）．
+- 単一化は**最小解**を取る: 実引数の row `(A, tail Ta)` を拡張 row `{ D, ..e }` に対応付けるとき，
+  `e = (A \ D) ∪ Ta` とする (MUST)．実引数が具体 row `C`（tail なし）の特殊ケースでは従来どおり
+  `e = C \ D` である．
 - 0022 の「第一段階では具体 row か単一変数に限る」制限は，本仕様により緩和される．
 
 ```emela
 -- callback を実行しつつ自身も log する高階関数
-fn traced<T, U>(x: T, f: (T) -> U uses 'e) -> U uses { log, ..'e } {
-    log_call()      -- uses { log }
-    f(x)            -- uses 'e
+fn traced<T, U, e>(x: T, f: (T) -> U uses e) -> U uses { Log, ..e } {
+    Log.info("call")     -- uses { Log }
+    f(x)                 -- uses e
 }
 ```
 
@@ -161,7 +180,7 @@ fn g() -> Unit uses { io, fs } {
 ## Open Questions
 
 - `throws` の推論（private 関数で `throws` を省略し本体から推論する）を同様に導入するか．
-- bounded row variable（`'e ⊆ { fs, net }` のような上界付き row 変数）の導入．
+- bounded row variable（`e ⊆ { Fs, Net }` のような上界付き row 変数）の導入．
 - 過大宣言に対する lint の既定（警告 on/off）．
 - IDE / ツールが推論された row を inlay hint として表示する規約．
 - `pub fn` の `uses` も推論可能にし（progressive disclosure を pub 境界まで広げる），推論結果を
