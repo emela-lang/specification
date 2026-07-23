@@ -20,7 +20,7 @@ Status: Draft
   `Int` / `Float` / `String` などの組み込み型に対する instance は **標準ライブラリの Core Prelude
   （spec 0021）** が与え（本体は `intrinsic fn` を呼ぶ），その暗黙 import により `1 + 2` のような
   既存コードは import 無しで従来どおり動く（後方互換）．
-- 実装の選択（instance の解決）は **孤児規則 (orphan rule)** により (trait, 型) ごとに大域一意で，
+- 実装の選択（instance の解決）は **孤児規則 (orphan rule)** により (trait, 型構築子) ごとに大域一意で，
   0014 の **単相化 (monomorphization)** をそのまま拡張して静的に行う．typed IR（spec 0012）には
   型変数・trait・辞書（dictionary）は一切現れない．辞書渡しを要する機能（trait object 等）は本仕様
   では扱わない．
@@ -190,9 +190,18 @@ fn fold_add<T: Add>(xs: Array<T>, i: Int, acc: T) -> T uses {} {
 - **孤児規則（MUST）**: `impl Trait for Type` を書けるのは，**`Trait` を定義したモジュール**，または
   **`Type` を定義したモジュール** のいずれかに限る．どちらでもないモジュールでの impl はコンパイル
   エラー（孤児 impl）とする．組み込み型（`Int` など）の所有モジュールは std の該当モジュール
-  （`Int` は `std.int` 等）と規定する．
-- **大域一意**: 孤児規則の帰結として，プログラム全体で (trait, 型) ごとに実装は高々 1 つになる．
-  したがって **instance の選択に曖昧は生じない**（型が決まれば実装は一意）．
+  （`Int` は `std.int` 等）と規定する．パラメータ付き instance（`impl<T> Trait for K<T>`）では，ここで
+  いう `Type` はその **型構築子** `K`（`Pair<T>` の `Pair`）を指し，その所有モジュール（`record` /
+  `enum` を定義したモジュール）で孤児規則を判定する．impl 自身の型パラメータ（`T`）はどのモジュール
+  由来でもよい．`record` と `enum` は所有判定において区別しない（いずれも定義モジュールが所有する）．
+- **大域一意（型構築子ごと, MUST）**: 一意性は **(trait, 型構築子)** を鍵とする．ここで型構築子とは
+  型引数を適用する前の頭部の名前であり（`Pair<T>` の `Pair`，`Array<T>` の `Array`，`Int` のような
+  引数を取らない型はそれ自身），パラメータ付き instance（`impl<T: Show> Show for Pair<T>`）と，同じ
+  構築子への具体 instance（`impl Show for Pair<Int>`）は **同じ鍵に衝突するため共存できない** (MUST NOT)．
+  すなわち **(trait, 型構築子) ごとに実装は高々 1 つ** であり，これにより重なり合う実装（overlapping
+  impl）は定義時に構造的に排除される．型が決まれば適用される実装は一意なので，**instance の選択に
+  曖昧は生じない**．（パラメータ付き instance の本体は，一致した型引数に対して自身の境界を再帰的に
+  discharge する — `Show for Pair<Int>` は `Show for Int` を要求する．）
 - **可視性**: impl を使う（境界を discharge する）には，その impl を提供するモジュールが，具体型が
   確定する地点（＝呼び出し側）で可視でなければならない．孤児規則より impl は必ず「trait のモジュール」
   か「型のモジュール」に住むので，**その trait とその型が両方 in-scope なら，その impl も自動的に
